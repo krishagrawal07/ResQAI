@@ -1,3 +1,5 @@
+import {MODE_META} from './constants';
+
 export function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -15,7 +17,22 @@ export function toPercentage(value, max) {
 }
 
 export function formatModeLabel(mode) {
-  return mode === 'car' ? 'CAR MODE' : 'BIKER MODE';
+  return MODE_META[mode]?.fullLabel?.toUpperCase() ?? 'BIKER SHIELD';
+}
+
+export function formatModeShortLabel(mode) {
+  return MODE_META[mode]?.label ?? 'Bike';
+}
+
+export function formatSensorSource(source) {
+  switch (source) {
+    case 'live':
+      return 'Live feed';
+    case 'preview':
+      return 'Smart preview';
+    default:
+      return 'Idle';
+  }
 }
 
 export function formatCoordinates(lat, lng) {

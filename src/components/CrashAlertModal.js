@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
 import {useAppContext} from '../context/AppContext';
 import DispatchService from '../services/DispatchService';
@@ -67,7 +68,6 @@ export default function CrashAlertModal() {
         JSON.stringify(resolvedLocation),
       );
     } catch (error) {
-      console.log('Current location fallback', error);
       resolvedLocation = {
         lat: location.lat,
         lng: location.lng,
@@ -113,28 +113,32 @@ export default function CrashAlertModal() {
 
     Animated.sequence([
       Animated.timing(shake, {
-        toValue: -12,
+        toValue: -10,
         duration: 80,
         useNativeDriver: true,
       }),
       Animated.timing(shake, {
-        toValue: 12,
+        toValue: 10,
         duration: 80,
         useNativeDriver: true,
       }),
       Animated.timing(shake, {
-        toValue: -8,
-        duration: 80,
+        toValue: -6,
+        duration: 70,
         useNativeDriver: true,
       }),
-      Animated.timing(shake, {toValue: 8, duration: 80, useNativeDriver: true}),
-      Animated.timing(shake, {toValue: 0, duration: 80, useNativeDriver: true}),
+      Animated.timing(shake, {
+        toValue: 6,
+        duration: 70,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shake, {toValue: 0, duration: 70, useNativeDriver: true}),
     ]).start();
 
     const blinkLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(warningBlink, {
-          toValue: 0,
+          toValue: 0.25,
           duration: 500,
           useNativeDriver: true,
         }),
@@ -212,13 +216,13 @@ export default function CrashAlertModal() {
               const ringStyle = {
                 opacity: value.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0.8, 0],
+                  outputRange: [0.82, 0],
                 }),
                 transform: [
                   {
                     scale: value.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [1, 1.4],
+                      outputRange: [1, 1.45],
                     }),
                   },
                 ],
@@ -231,16 +235,28 @@ export default function CrashAlertModal() {
                 />
               );
             })}
-            <Animated.Text style={[styles.warning, {opacity: warningBlink}]}>
-              ⚠️
-            </Animated.Text>
+
+            <Animated.View style={{opacity: warningBlink}}>
+              <View style={styles.warningCore}>
+                <Ionicons
+                  color={COLORS.PINK}
+                  name="warning-outline"
+                  size={42}
+                />
+              </View>
+            </Animated.View>
           </View>
 
-          <Text style={styles.title}>CRASH DETECTED</Text>
+          <Text style={styles.title}>Possible crash detected</Text>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>SEVERITY: CRITICAL</Text>
+            <Text style={styles.badgeText}>Emergency countdown is active</Text>
           </View>
+          <Text style={styles.copy}>
+            If you are safe, cancel now. If there is no response, ResQ AI will
+            continue the SOS flow automatically.
+          </Text>
           <Text style={styles.countdown}>{countdown}</Text>
+
           <View style={styles.progressTrack}>
             <Animated.View
               style={[styles.progressFill, {width: progressWidth}]}
@@ -248,17 +264,19 @@ export default function CrashAlertModal() {
           </View>
 
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={0.92}
             onPress={handleSOS}
             style={styles.sosButton}>
-            <Text style={styles.sosButtonText}>🚨 SEND SOS NOW</Text>
+            <Ionicons color="#FFFFFF" name="paper-plane-outline" size={18} />
+            <Text style={styles.sosButtonText}>Send SOS now</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={0.92}
             onPress={handleCancel}
             style={styles.cancelButton}>
-            <Text style={styles.cancelButtonText}>✕ FALSE ALARM — CANCEL</Text>
+            <Ionicons color={COLORS.TEXT} name="close-outline" size={18} />
+            <Text style={styles.cancelButtonText}>I am safe, cancel alert</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -269,101 +287,121 @@ export default function CrashAlertModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(5,0,2,0.97)',
+    backgroundColor: 'rgba(5, 8, 22, 0.96)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    padding: 28,
   },
   content: {
+    width: '100%',
+    backgroundColor: '#120B18',
+    borderRadius: 28,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 92, 138, 0.26)',
     alignItems: 'center',
   },
   rippleContainer: {
-    width: 160,
-    height: 160,
+    width: 170,
+    height: 170,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    marginBottom: 14,
   },
   ripple: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 138,
+    height: 138,
+    borderRadius: 69,
     borderWidth: 2,
     borderColor: COLORS.PINK,
   },
-  warning: {
-    fontSize: 52,
+  warningCore: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: 'rgba(255, 92, 138, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 22,
-    color: COLORS.PINK,
+    fontSize: 24,
+    color: COLORS.TEXT,
     fontWeight: '800',
-    letterSpacing: 3,
+    textAlign: 'center',
   },
   badge: {
-    backgroundColor: 'rgba(255,61,107,0.1)',
+    backgroundColor: 'rgba(255, 92, 138, 0.12)',
     borderColor: COLORS.PINK,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
     marginTop: 14,
   },
   badgeText: {
     color: COLORS.PINK,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  copy: {
+    marginTop: 14,
+    color: COLORS.TEXT_DIM,
+    textAlign: 'center',
+    lineHeight: 21,
+    fontSize: 14,
   },
   countdown: {
     marginTop: 18,
     color: COLORS.PINK,
-    fontSize: 56,
+    fontSize: 58,
     fontWeight: '900',
     fontFamily: 'monospace',
   },
   progressTrack: {
     width: 280,
-    height: 6,
+    height: 7,
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 8,
     overflow: 'hidden',
-    marginTop: 14,
-    marginBottom: 28,
+    marginTop: 12,
+    marginBottom: 24,
   },
   progressFill: {
-    height: 6,
+    height: 7,
     backgroundColor: COLORS.PINK,
   },
   sosButton: {
     backgroundColor: COLORS.PINK,
-    borderRadius: 14,
-    width: 280,
-    height: 52,
+    borderRadius: 18,
+    width: '100%',
+    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
   },
   sosButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 2,
+    marginLeft: 8,
   },
   cancelButton: {
-    width: 280,
-    height: 46,
-    marginTop: 10,
-    borderRadius: 14,
+    width: '100%',
+    height: 50,
+    marginTop: 12,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: COLORS.MUTED,
+    borderColor: COLORS.BORDER,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
   },
   cancelButtonText: {
-    color: COLORS.MUTED2,
-    fontSize: 12,
-    letterSpacing: 2,
+    color: COLORS.TEXT,
+    fontSize: 13,
     fontWeight: '700',
+    marginLeft: 8,
   },
 });

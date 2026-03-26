@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
 import AnimatedReanimated, {
   interpolate,
   useAnimatedStyle,
@@ -15,17 +16,50 @@ import AnimatedReanimated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import BrandMark from '../components/BrandMark';
 import CrashAlertModal from '../components/CrashAlertModal';
-import RadarAnimation from '../components/RadarAnimation';
 import SensorCard from '../components/SensorCard';
 import {useAppContext} from '../context/AppContext';
 import CrashDetectionService from '../services/CrashDetectionService';
+import LocationService from '../services/LocationService';
 import NotificationService from '../services/NotificationService';
 import SensorService from '../services/SensorService';
-import {COLORS, CRASH_THRESHOLDS, STORAGE_KEYS} from '../utils/constants';
-import {formatModeLabel, toPercentage} from '../utils/helpers';
+import {
+  COLORS,
+  CRASH_THRESHOLDS,
+  MODE_META,
+  STORAGE_KEYS,
+} from '../utils/constants';
+import {
+  formatModeLabel,
+  formatModeShortLabel,
+  toPercentage,
+} from '../utils/helpers';
+import {requestAllPermissions} from '../utils/permissions';
 
-export default function MonitorScreen() {
+const QUICK_ACTIONS = [
+  {
+    key: 'location',
+    icon: 'locate-outline',
+    title: 'Refresh location',
+    subtitle: 'Try a fresh GPS lock',
+  },
+  {
+    key: 'drill',
+    icon: 'flash-outline',
+    title: 'Run rescue drill',
+    subtitle: 'Preview the crash flow',
+  },
+  {
+    key: 'safety',
+    icon: 'settings-outline',
+    title: 'Tune protection',
+    subtitle: 'Open Safety tab',
+  },
+];
+
+export default function MonitorScreen({navigation}) {
   const {state, dispatch} = useAppContext();
   const blink = useRef(new Animated.Value(1)).current;
   const pulse = useSharedValue(0);
@@ -49,17 +83,24 @@ export default function MonitorScreen() {
     [dispatch],
   );
 
+  const handleStatusChange = useCallback(
+    nextStatus => {
+      dispatch({type: 'SET_RUNTIME_STATUS', payload: nextStatus});
+    },
+    [dispatch],
+  );
+
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(blink, {
-          toValue: 0,
-          duration: 800,
+          toValue: 0.2,
+          duration: 850,
           useNativeDriver: true,
         }),
         Animated.timing(blink, {
           toValue: 1,
-          duration: 800,
+          duration: 850,
           useNativeDriver: true,
         }),
       ]),
@@ -75,7 +116,7 @@ export default function MonitorScreen() {
   }, [blink, state.isMonitoring]);
 
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, {duration: 1400}), -1, true);
+    pulse.value = withRepeat(withTiming(1, {duration: 1600}), -1, true);
   }, [pulse]);
 
   useEffect(() => {
@@ -87,19 +128,20 @@ export default function MonitorScreen() {
         onSensorUpdate: handleSensorUpdate,
         onLocationUpdate: handleLocationUpdate,
         onCrash: handleCrashDetected,
+        onStatusChange: handleStatusChange,
       });
     }
   }, [
     handleCrashDetected,
     handleLocationUpdate,
     handleSensorUpdate,
+    handleStatusChange,
     state.isMonitoring,
     state.mode,
   ]);
 
   const simulateButtonStyle = useAnimatedStyle(() => ({
-    transform: [{scale: interpolate(pulse.value, [0, 1], [1, 1.02])}],
-    shadowOpacity: interpolate(pulse.value, [0, 1], [0.15, 0.55]),
+    transform: [{scale: interpolate(pulse.value, [0, 1], [1, 1.03])}],
   }));
 
   const handleModeSelect = async nextMode => {
@@ -116,14 +158,23 @@ export default function MonitorScreen() {
     if (state.isMonitoring) {
       await SensorService.stopMonitoring();
       dispatch({type: 'SET_MONITORING', payload: false});
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {sensorSource: 'idle'},
+      });
       return;
     }
 
-    await SensorService.startMonitoring({
-      mode: state.mode,
-      onSensorUpdate: handleSensorUpdate,
-      onLocationUpdate: handleLocationUpdate,
-      onCrash: handleCrashDetected,
+    const permissions = await requestAllPermissions();
+    const liveReady =
+      permissions.location && permissions.microphone && permissions.activity;
+
+    dispatch({
+      type: 'SET_RUNTIME_STATUS',
+      payload: {
+        permissions,
+        startupMode: liveReady ? 'live' : 'preview',
+      },
     });
     dispatch({type: 'SET_MONITORING', payload: true});
   };
@@ -135,50 +186,157 @@ export default function MonitorScreen() {
     NotificationService.triggerCrashAlarm();
   };
 
-  const threshold = CRASH_THRESHOLDS[state.mode];
+  const handleQuickAction = async key => {
+    if (key === 'drill') {
+      handleSimulateCrash();
+      return;
+    }
+
+    if (key === 'safety') {
+      navigation.navigate('Safety');
+      return;
+    }
+
+    try {
+      const currentLocation = await LocationService.getCurrentLocation();
+      dispatch({type: 'SET_LOCATION', payload: currentLocation});
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.LAST_LOCATION,
+        JSON.stringify(currentLocation),
+      );
+    } catch (error) {
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {startupMode: 'preview'},
+      });
+    }
+  };
+
+  const threshold = CRASH_THRESHOLDS[state.mode] ?? CRASH_THRESHOLDS.biker;
+  const modeOptions = Object.values(MODE_META);
+  const activeMode = MODE_META[state.mode] ?? MODE_META.biker;
+  const liveReady =
+    state.runtime.permissions.location &&
+    state.runtime.permissions.microphone &&
+    state.runtime.permissions.activity;
+
+  const readinessItems = [
+    {
+      key: 'guardianMode',
+      icon: 'people-outline',
+      label: 'Guardian mode',
+      active: state.preferences.guardianMode,
+    },
+    {
+      key: 'shareMedicalCard',
+      icon: 'medkit-outline',
+      label: 'Medical card',
+      active: state.preferences.shareMedicalCard,
+    },
+    {
+      key: 'autoArm',
+      icon: 'shield-outline',
+      label: 'Auto arm',
+      active: state.preferences.autoArm,
+    },
+    {
+      key: 'voicePrompts',
+      icon: 'volume-high-outline',
+      label: 'Voice prompts',
+      active: state.preferences.voicePrompts,
+    },
+  ];
+  const readinessIconStyles = {
+    active: styles.readinessIconActive,
+    inactive: styles.readinessIconInactive,
+  };
+  const sensorFeedValue =
+    state.runtime.sensorSource === 'live'
+      ? 'Live'
+      : state.runtime.sensorSource === 'preview'
+      ? 'Preview'
+      : 'Idle';
+  const rescueLaneValue = state.preferences.guardianMode ? 'Guardian' : 'Solo';
+  const heroSignals = [
+    {
+      key: 'mode',
+      icon: activeMode.icon,
+      label: 'Profile',
+      value: formatModeShortLabel(state.mode),
+      accent: activeMode.accent,
+    },
+    {
+      key: 'feed',
+      icon: state.runtime.sensorSource === 'live' ? 'radio' : 'sparkles',
+      label: 'Sensor',
+      value: sensorFeedValue,
+      accent: liveReady ? COLORS.CYAN : COLORS.YELLOW,
+    },
+    {
+      key: 'lane',
+      icon: state.preferences.guardianMode
+        ? 'people-circle'
+        : 'person-circle-outline',
+      label: 'Rescue',
+      value: rescueLaneValue,
+      accent: state.preferences.guardianMode ? COLORS.GREEN : COLORS.PINK,
+    },
+  ];
 
   const sensorCards = useMemo(
     () => [
       {
-        label: 'ACCEL-X',
+        label: 'Accel X',
         value: state.sensors.ax,
-        unit: 'm/s²',
+        unit: 'm/s2',
         color: COLORS.CYAN,
+        icon: 'resize-outline',
+        hint: 'Lateral motion',
         percentage: toPercentage(state.sensors.ax, threshold.accelMagnitude),
       },
       {
-        label: 'ACCEL-Y',
+        label: 'Accel Y',
         value: state.sensors.ay,
-        unit: 'm/s²',
-        color: COLORS.CYAN,
+        unit: 'm/s2',
+        color: COLORS.BLUE,
+        icon: 'move-outline',
+        hint: 'Forward motion',
         percentage: toPercentage(state.sensors.ay, threshold.accelMagnitude),
       },
       {
-        label: 'GYRO-X',
+        label: 'Gyro X',
         value: state.sensors.gx,
-        unit: '°/s',
+        unit: 'deg/s',
         color: COLORS.PINK,
+        icon: 'sync-outline',
+        hint: 'Tilt rotation',
         percentage: toPercentage(state.sensors.gx, threshold.gyroMagnitude),
       },
       {
-        label: 'GYRO-Y',
+        label: 'Gyro Y',
         value: state.sensors.gy,
-        unit: '°/s',
-        color: COLORS.PINK,
+        unit: 'deg/s',
+        color: COLORS.ORANGE,
+        icon: 'refresh-outline',
+        hint: 'Yaw rotation',
         percentage: toPercentage(state.sensors.gy, threshold.gyroMagnitude),
       },
       {
-        label: 'SPEED',
+        label: 'Speed',
         value: state.sensors.speed,
         unit: 'km/h',
         color: COLORS.GREEN,
+        icon: 'speedometer-outline',
+        hint: 'Travel velocity',
         percentage: toPercentage(state.sensors.speed, 120),
       },
       {
-        label: 'AUDIO dB',
+        label: 'Cabin audio',
         value: state.sensors.db,
         unit: 'dB',
         color: COLORS.YELLOW,
+        icon: 'mic-outline',
+        hint: 'Impact noise level',
         percentage: toPercentage(state.sensors.db, threshold.audioDb + 10),
       },
     ],
@@ -190,94 +348,295 @@ export default function MonitorScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.heroCard}>
-          <RadarAnimation />
-          <View style={styles.statusRow}>
-            <Animated.View
-              style={[
-                styles.statusDot,
-                {
-                  backgroundColor: state.isMonitoring
-                    ? COLORS.GREEN
-                    : COLORS.MUTED,
-                  opacity: blink,
-                },
-              ]}
+        <LinearGradient
+          colors={['#111B32', '#0D1730', '#091120']}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+          style={styles.heroCard}>
+          <View style={styles.heroTopRow}>
+            <BrandMark showWordmark size={58} />
+            <View style={styles.heroStatusBadge}>
+              <Animated.View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor: state.isMonitoring
+                      ? COLORS.GREEN
+                      : COLORS.YELLOW,
+                    opacity: blink,
+                  },
+                ]}
+              />
+              <Text style={styles.heroStatusText}>
+                {state.isMonitoring ? 'Protection active' : 'Standby mode'}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.heroTitle}>Protection tuned for every trip</Text>
+          <Text style={styles.heroCopy}>
+            Real monitoring when permissions and hardware are ready, plus a
+            smart preview feed so the app still feels alive on demos and
+            emulators.
+          </Text>
+
+          <View style={styles.heroSignalsRow}>
+            {heroSignals.map(signal => (
+              <LinearGradient
+                colors={['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.02)']}
+                end={{x: 1, y: 1}}
+                key={signal.key}
+                start={{x: 0, y: 0}}
+                style={styles.heroSignalBubble}>
+                <View
+                  style={[
+                    styles.heroSignalGlow,
+                    {backgroundColor: `${signal.accent}18`},
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.heroSignalIconWrap,
+                    {backgroundColor: `${signal.accent}22`},
+                  ]}>
+                  <Ionicons
+                    color={signal.accent}
+                    name={signal.icon}
+                    size={20}
+                  />
+                </View>
+                <Text style={styles.heroSignalLabel}>{signal.label}</Text>
+                <Text numberOfLines={1} style={styles.heroSignalValue}>
+                  {signal.value}
+                </Text>
+              </LinearGradient>
+            ))}
+          </View>
+
+          <View style={styles.heroActionRow}>
+            <TouchableOpacity
+              activeOpacity={0.92}
+              onPress={handleMonitoringToggle}
+              style={styles.actionOrbTouch}>
+              <LinearGradient
+                colors={
+                  state.isMonitoring
+                    ? ['rgba(255, 107, 107, 0.18)', 'rgba(255,255,255,0.04)']
+                    : ['#7BE8FF', '#49CFFF']
+                }
+                end={{x: 1, y: 1}}
+                start={{x: 0, y: 0}}
+                style={[
+                  styles.actionOrb,
+                  state.isMonitoring ? styles.actionOrbStop : null,
+                ]}>
+                <View
+                  style={[
+                    styles.actionOrbIcon,
+                    state.isMonitoring
+                      ? styles.actionOrbIconStop
+                      : styles.actionOrbIconLive,
+                  ]}>
+                  <Ionicons
+                    color={state.isMonitoring ? COLORS.RED : COLORS.BG}
+                    name={
+                      state.isMonitoring
+                        ? 'pause-circle-outline'
+                        : 'shield-checkmark'
+                    }
+                    size={24}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.actionOrbTitle,
+                    state.isMonitoring ? styles.actionOrbTitleStop : null,
+                  ]}>
+                  {state.isMonitoring ? 'Pause' : 'Arm'}
+                </Text>
+                <Text
+                  style={[
+                    styles.actionOrbSubtitle,
+                    state.isMonitoring ? styles.actionOrbSubtitleStop : null,
+                  ]}>
+                  Protection
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <AnimatedReanimated.View
+              style={[styles.actionOrbTouch, simulateButtonStyle]}>
+              <TouchableOpacity
+                activeOpacity={0.92}
+                onPress={handleSimulateCrash}
+                style={styles.actionOrbButton}>
+                <LinearGradient
+                  colors={['rgba(255, 92, 138, 0.2)', 'rgba(255,255,255,0.03)']}
+                  end={{x: 1, y: 1}}
+                  start={{x: 0, y: 0}}
+                  style={styles.actionOrb}>
+                  <View
+                    style={[styles.actionOrbIcon, styles.actionOrbIconDrill]}>
+                    <Ionicons color={COLORS.PINK} name="flash" size={24} />
+                  </View>
+                  <Text
+                    style={[styles.actionOrbTitle, styles.actionOrbTitleDrill]}>
+                    Crash
+                  </Text>
+                  <Text
+                    style={[
+                      styles.actionOrbSubtitle,
+                      styles.actionOrbSubtitleDrill,
+                    ]}>
+                    Drill
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </AnimatedReanimated.View>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.noticeCard}>
+          <View style={styles.noticeIcon}>
+            <Ionicons
+              color={liveReady ? COLORS.GREEN : COLORS.YELLOW}
+              name={liveReady ? 'checkmark-circle' : 'information-circle'}
+              size={20}
             />
-            <Text
-              style={[
-                styles.statusText,
-                {color: state.isMonitoring ? COLORS.GREEN : COLORS.MUTED2},
-              ]}>
-              {state.isMonitoring ? 'MONITORING ACTIVE' : 'MONITORING STANDBY'}
+          </View>
+          <View style={styles.noticeCopy}>
+            <Text style={styles.noticeTitle}>
+              {liveReady ? 'Live device mode ready' : 'Preview mode is enabled'}
+            </Text>
+            <Text style={styles.noticeText}>
+              {liveReady
+                ? 'Location, microphone, and motion access are available for live monitoring.'
+                : 'If some permissions are missing, the app keeps working with smart preview data instead of looking broken.'}
             </Text>
           </View>
-          <Text style={styles.modeSubtitle}>{formatModeLabel(state.mode)}</Text>
         </View>
 
-        <Text style={styles.sectionTitle}>Vehicle Mode</Text>
-        <View style={styles.modeRow}>
-          {[
-            {label: '🏍️\nBIKER MODE', value: 'biker'},
-            {label: '🚗\nCAR MODE', value: 'car'},
-          ].map(option => (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              key={option.value}
-              onPress={() => handleModeSelect(option.value)}
-              style={[
-                styles.modeCard,
-                state.mode === option.value ? styles.modeCardActive : null,
-              ]}>
-              <Text
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Vehicle profiles</Text>
+          <Text style={styles.sectionCaption}>
+            {formatModeLabel(state.mode)}
+          </Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          contentContainerStyle={styles.modeScroller}
+          showsHorizontalScrollIndicator={false}>
+          {modeOptions.map(option => {
+            const selected = state.mode === option.value;
+
+            return (
+              <TouchableOpacity
+                activeOpacity={0.92}
+                key={option.value}
+                onPress={() => handleModeSelect(option.value)}
                 style={[
-                  styles.modeCardText,
-                  state.mode === option.value
-                    ? styles.modeCardTextActive
-                    : null,
+                  styles.modePill,
+                  selected ? styles.modePillActive : null,
                 ]}>
-                {option.label}
-              </Text>
+                <View
+                  style={[
+                    styles.modeIconWrap,
+                    {backgroundColor: `${option.accent}20`},
+                  ]}>
+                  <Ionicons
+                    color={option.accent}
+                    name={option.icon}
+                    size={22}
+                  />
+                </View>
+                <View style={styles.modeCopy}>
+                  <Text
+                    style={[
+                      styles.modeTitle,
+                      selected ? {color: option.accent} : null,
+                    ]}>
+                    {option.label}
+                  </Text>
+                  <Text style={styles.modeSubtitle}>{option.subtitle}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick actions</Text>
+          <Text style={styles.sectionCaption}>
+            Faster access to common tasks
+          </Text>
+        </View>
+
+        <View style={styles.quickGrid}>
+          {QUICK_ACTIONS.map(action => (
+            <TouchableOpacity
+              activeOpacity={0.92}
+              key={action.key}
+              onPress={() => handleQuickAction(action.key)}
+              style={styles.quickCard}>
+              <View style={styles.quickIconWrap}>
+                <Ionicons color={COLORS.CYAN} name={action.icon} size={20} />
+              </View>
+              <Text style={styles.quickTitle}>{action.title}</Text>
+              <Text style={styles.quickSubtitle}>{action.subtitle}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Live Sensor Grid</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Readiness board</Text>
+          <Text style={styles.sectionCaption}>
+            {activeMode.subtitle} with your current response stack
+          </Text>
+        </View>
+
+        <View style={styles.readinessCard}>
+          {readinessItems.map(item => (
+            <View key={item.key} style={styles.readinessItem}>
+              <View
+                style={[
+                  styles.readinessIcon,
+                  item.active
+                    ? readinessIconStyles.active
+                    : readinessIconStyles.inactive,
+                ]}>
+                <Ionicons
+                  color={item.active ? COLORS.GREEN : COLORS.YELLOW}
+                  name={item.icon}
+                  size={18}
+                />
+              </View>
+              <Text style={styles.readinessLabel}>{item.label}</Text>
+              <Text
+                style={[
+                  styles.readinessValue,
+                  {color: item.active ? COLORS.GREEN : COLORS.YELLOW},
+                ]}>
+                {item.active ? 'On' : 'Review'}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Live sensor studio</Text>
+          <Text style={styles.sectionCaption}>
+            {state.isMonitoring
+              ? 'Telemetry is updating in real time'
+              : 'Arm protection to watch the sensor grid move'}
+          </Text>
+        </View>
+
         <View style={styles.grid}>
           {sensorCards.map(card => (
             <SensorCard key={card.label} {...card} />
           ))}
         </View>
-
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={handleMonitoringToggle}
-          style={[
-            styles.monitorToggle,
-            state.isMonitoring
-              ? styles.monitorToggleActive
-              : styles.monitorToggleIdle,
-          ]}>
-          <Text
-            style={[
-              styles.monitorToggleText,
-              {color: state.isMonitoring ? COLORS.GREEN : COLORS.TEXT},
-            ]}>
-            {state.isMonitoring
-              ? '■ STOP MONITORING'
-              : 'TAP TO START MONITORING'}
-          </Text>
-        </TouchableOpacity>
-
-        <AnimatedReanimated.View
-          style={[styles.simulateWrapper, simulateButtonStyle]}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleSimulateCrash}
-            style={styles.simulateButton}>
-            <Text style={styles.simulateButtonText}>💥 SIMULATE CRASH</Text>
-          </TouchableOpacity>
-        </AnimatedReanimated.View>
       </ScrollView>
 
       <CrashAlertModal />
@@ -292,119 +651,319 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 28,
+    paddingBottom: 120,
   },
   heroCard: {
-    backgroundColor: COLORS.CARD,
-    borderRadius: 24,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+    borderRadius: 28,
+    padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(0,229,255,0.08)',
-    marginBottom: 18,
+    borderColor: COLORS.BORDER,
+    marginBottom: 16,
   },
-  statusRow: {
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  heroStatusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginLeft: 12,
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 10,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    marginRight: 8,
   },
-  statusText: {
-    fontSize: 13,
-    letterSpacing: 3,
+  heroStatusText: {
+    color: COLORS.TEXT,
+    fontSize: 12,
     fontWeight: '700',
   },
-  modeSubtitle: {
+  heroTitle: {
+    marginTop: 24,
+    color: COLORS.TEXT,
+    fontSize: 28,
+    fontWeight: '800',
+    lineHeight: 34,
+  },
+  heroCopy: {
     marginTop: 10,
+    color: COLORS.TEXT_DIM,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  heroSignalsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 22,
+  },
+  heroSignalBubble: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  heroSignalGlow: {
+    position: 'absolute',
+    width: '84%',
+    height: '84%',
+    borderRadius: 999,
+  },
+  heroSignalIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  heroSignalLabel: {
     color: COLORS.MUTED2,
-    textAlign: 'center',
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  heroSignalValue: {
+    color: COLORS.TEXT,
     fontSize: 13,
+    fontWeight: '800',
+  },
+  heroActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  actionOrbTouch: {
+    width: '48%',
+  },
+  actionOrbButton: {
+    width: '100%',
+  },
+  actionOrb: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 12,
+  },
+  actionOrbStop: {
+    borderWidth: 1,
+    borderColor: COLORS.RED,
+  },
+  actionOrbIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  actionOrbIconLive: {
+    backgroundColor: 'rgba(5, 8, 22, 0.16)',
+  },
+  actionOrbIconStop: {
+    backgroundColor: 'rgba(255, 107, 107, 0.12)',
+  },
+  actionOrbIconDrill: {
+    backgroundColor: 'rgba(255, 92, 138, 0.12)',
+  },
+  actionOrbTitle: {
+    color: COLORS.BG,
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  actionOrbTitleStop: {
+    color: COLORS.RED,
+  },
+  actionOrbTitleDrill: {
+    color: COLORS.PINK,
+  },
+  actionOrbSubtitle: {
+    color: 'rgba(5, 8, 22, 0.76)',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  actionOrbSubtitleStop: {
+    color: COLORS.TEXT,
+  },
+  actionOrbSubtitleDrill: {
+    color: COLORS.TEXT,
+  },
+  noticeCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.CARD,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    marginBottom: 20,
+  },
+  noticeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  noticeCopy: {
+    flex: 1,
+  },
+  noticeTitle: {
+    color: COLORS.TEXT,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  noticeText: {
+    marginTop: 6,
+    color: COLORS.MUTED2,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  sectionHeader: {
+    marginBottom: 12,
+    marginTop: 4,
   },
   sectionTitle: {
     color: COLORS.TEXT,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
-    marginBottom: 12,
   },
-  modeRow: {
-    flexDirection: 'row',
-    marginBottom: 18,
+  sectionCaption: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    marginTop: 4,
   },
-  modeCard: {
-    flex: 1,
+  modeScroller: {
+    paddingBottom: 8,
+    paddingRight: 8,
+  },
+  modePill: {
+    width: 196,
     backgroundColor: COLORS.CARD,
-    borderRadius: 14,
+    borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.MUTED,
+    borderColor: COLORS.BORDER,
+    marginRight: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 10,
   },
-  modeCardActive: {
-    borderColor: COLORS.CYAN,
-    backgroundColor: 'rgba(0,229,255,0.06)',
+  modePillActive: {
+    backgroundColor: COLORS.CARD_ALT,
   },
-  modeCardText: {
+  modeIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeCopy: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  modeTitle: {
     color: COLORS.TEXT,
-    textAlign: 'center',
-    lineHeight: 22,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  modeSubtitle: {
+    marginTop: 4,
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  quickCard: {
+    width: '48%',
+    backgroundColor: COLORS.CARD,
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    marginBottom: 12,
+  },
+  quickIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(89, 216, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  quickTitle: {
+    color: COLORS.TEXT,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  quickSubtitle: {
+    marginTop: 6,
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  readinessCard: {
+    backgroundColor: COLORS.CARD,
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    marginBottom: 18,
+  },
+  readinessItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  readinessIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  readinessIconActive: {
+    backgroundColor: 'rgba(76, 242, 180, 0.12)',
+  },
+  readinessIconInactive: {
+    backgroundColor: 'rgba(255, 209, 102, 0.12)',
+  },
+  readinessLabel: {
+    flex: 1,
+    color: COLORS.TEXT,
+    fontSize: 14,
     fontWeight: '700',
   },
-  modeCardTextActive: {
-    color: COLORS.CYAN,
+  readinessValue: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-  },
-  monitorToggle: {
-    marginTop: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    height: 58,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monitorToggleIdle: {
-    backgroundColor: COLORS.BG3,
-    borderColor: COLORS.MUTED,
-  },
-  monitorToggleActive: {
-    backgroundColor: 'rgba(0,255,136,0.1)',
-    borderColor: COLORS.GREEN,
-  },
-  monitorToggleText: {
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  simulateWrapper: {
-    shadowColor: COLORS.PINK,
-    shadowOffset: {width: 0, height: 0},
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  simulateButton: {
-    marginTop: 14,
-    height: 58,
-    width: '100%',
-    borderRadius: 18,
-    backgroundColor: '#1a0008',
-    borderWidth: 2,
-    borderColor: COLORS.PINK,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  simulateButtonText: {
-    color: COLORS.PINK,
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 1.2,
   },
 });

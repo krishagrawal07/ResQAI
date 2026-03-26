@@ -10,7 +10,6 @@ import FirebaseService from './src/services/FirebaseService';
 import NotificationService from './src/services/NotificationService';
 import SensorService from './src/services/SensorService';
 import {COLORS, STORAGE_KEYS} from './src/utils/constants';
-import {requestAllPermissions} from './src/utils/permissions';
 
 enableScreens(true);
 
@@ -27,6 +26,18 @@ const navigationTheme = {
   },
 };
 
+function parseStoredJson(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return null;
+  }
+}
+
 function AppBootstrap() {
   const {dispatch} = useAppContext();
 
@@ -34,30 +45,68 @@ function AppBootstrap() {
     let isMounted = true;
 
     const bootstrap = async () => {
-      await requestAllPermissions();
-      await FirebaseService.initialize();
+      let firebaseReady = false;
+
+      try {
+        const firebaseApp = await FirebaseService.initialize();
+        firebaseReady = Boolean(firebaseApp);
+      } catch (error) {
+        firebaseReady = false;
+      }
+
       NotificationService.configure();
 
-      const [savedProfile, savedLocation] = await Promise.all([
+      const [
+        savedProfile,
+        savedLocation,
+        savedPreferences,
+        savedEmergencyPlan,
+      ] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
         AsyncStorage.getItem(STORAGE_KEYS.LAST_LOCATION),
+        AsyncStorage.getItem(STORAGE_KEYS.APP_PREFERENCES),
+        AsyncStorage.getItem(STORAGE_KEYS.EMERGENCY_PLAN),
       ]);
 
       if (!isMounted) {
         return;
       }
 
-      if (savedProfile) {
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {firebaseReady},
+      });
+
+      const parsedProfile = parseStoredJson(savedProfile);
+      const parsedLocation = parseStoredJson(savedLocation);
+      const parsedPreferences = parseStoredJson(savedPreferences);
+      const parsedEmergencyPlan = parseStoredJson(savedEmergencyPlan);
+
+      if (parsedProfile) {
         dispatch({
           type: 'SET_USER_PROFILE',
-          payload: JSON.parse(savedProfile),
+          payload: parsedProfile,
         });
       }
 
-      if (savedLocation) {
+      if (parsedLocation) {
         dispatch({
           type: 'SET_LOCATION',
-          payload: JSON.parse(savedLocation),
+          payload: parsedLocation,
+        });
+      }
+
+      if (parsedPreferences) {
+        dispatch({
+          type: 'SET_PREFERENCES',
+          payload: parsedPreferences,
+        });
+      }
+
+      if (parsedEmergencyPlan) {
+        dispatch({
+          type: 'SET_EMERGENCY_PLAN',
+          payload: parsedEmergencyPlan,
         });
       }
     };

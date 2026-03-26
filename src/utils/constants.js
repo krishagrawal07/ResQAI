@@ -1,19 +1,26 @@
 export const COLORS = {
-  BG: '#080C14',
-  BG2: '#0D1220',
-  BG3: '#111827',
-  CARD: '#0F172A',
-  CYAN: '#00E5FF',
-  PINK: '#FF3D6B',
-  GREEN: '#00FF88',
-  YELLOW: '#FFD600',
-  MUTED: '#4B5680',
-  MUTED2: '#7B85A8',
-  TEXT: '#E2E8F5',
+  BG: '#050816',
+  BG2: '#0B1120',
+  BG3: '#111B32',
+  CARD: '#10192B',
+  CARD_ALT: '#16243D',
+  SURFACE: '#1A2946',
+  CYAN: '#59D8FF',
+  PINK: '#FF5C8A',
+  GREEN: '#4CF2B4',
+  YELLOW: '#FFD166',
+  ORANGE: '#FF9B71',
+  BLUE: '#7AA2FF',
+  RED: '#FF6B6B',
+  MUTED: '#40547C',
+  MUTED2: '#97A6C7',
+  TEXT: '#F4F7FB',
+  TEXT_DIM: '#C3CCE1',
+  BORDER: 'rgba(137, 159, 208, 0.18)',
 };
 
 export const FONTS = {
-  heading: 'monospace',
+  heading: 'System',
   mono: 'monospace',
 };
 
@@ -30,11 +37,106 @@ export const CRASH_THRESHOLDS = {
     speedDropPercent: 70,
     audioDb: 105,
   },
+  scooter: {
+    accelMagnitude: 18,
+    gyroMagnitude: 140,
+    speedDropPercent: 78,
+    audioDb: 98,
+  },
+  family: {
+    accelMagnitude: 28,
+    gyroMagnitude: 110,
+    speedDropPercent: 65,
+    audioDb: 108,
+  },
+};
+
+export const MODE_META = {
+  biker: {
+    value: 'biker',
+    label: 'Bike',
+    fullLabel: 'Biker Shield',
+    subtitle: 'Fast two-wheel response',
+    icon: 'bicycle-outline',
+    accent: COLORS.CYAN,
+  },
+  scooter: {
+    value: 'scooter',
+    label: 'Scooter',
+    fullLabel: 'Scooter Commute',
+    subtitle: 'City ride and delivery trips',
+    icon: 'flash-outline',
+    accent: COLORS.YELLOW,
+  },
+  car: {
+    value: 'car',
+    label: 'Car',
+    fullLabel: 'City Car',
+    subtitle: 'Private car and cab tuning',
+    icon: 'car-sport-outline',
+    accent: COLORS.GREEN,
+  },
+  family: {
+    value: 'family',
+    label: 'SUV / Van',
+    fullLabel: 'Family Drive',
+    subtitle: 'Heavy vehicle safety profile',
+    icon: 'bus-outline',
+    accent: COLORS.PINK,
+  },
+};
+
+export const SENSITIVITY_OPTIONS = [
+  {
+    value: 'calm',
+    label: 'Calm',
+    subtitle: 'Fewer alerts on smooth daily travel',
+  },
+  {
+    value: 'balanced',
+    label: 'Balanced',
+    subtitle: 'Recommended blend of speed and caution',
+  },
+  {
+    value: 'max',
+    label: 'Max',
+    subtitle: 'Most sensitive protection for high-risk trips',
+  },
+];
+
+export const DEFAULT_USER_PROFILE = {
+  name: '',
+  phone: '',
+  city: '',
+  bloodGroup: 'Unknown',
+  vehicleId: '',
+  medicalNotes: '',
+  emergencyContact: {name: '', phone: ''},
+  vehicleMode: 'biker',
+};
+
+export const DEFAULT_PREFERENCES = {
+  detectionSensitivity: 'balanced',
+  autoArm: true,
+  guardianMode: true,
+  voicePrompts: true,
+  silentDispatch: false,
+  shareMedicalCard: true,
+  notifyNearbyResponders: true,
+};
+
+export const DEFAULT_EMERGENCY_PLAN = {
+  bloodGroup: 'Unknown',
+  medicalNotes: 'No medical notes added yet.',
+  safeWord: 'ResQ',
+  roadsidePlan: 'Nearest responders + emergency contact',
 };
 
 export const STORAGE_KEYS = {
   ONBOARDED: 'onboarded',
   USER_PROFILE: 'resqai_user_profile',
+  APP_PREFERENCES: 'resqai_app_preferences',
+  EMERGENCY_PLAN: 'resqai_emergency_plan',
   LAST_LOCATION: 'resqai_last_location',
   LOCAL_CRASH_LOGS: 'resqai_local_crash_logs',
   LOCAL_FIREBASE_USER: 'resqai_local_firebase_user',

@@ -1,4 +1,9 @@
 import React, {createContext, useContext, useMemo, useReducer} from 'react';
+import {
+  DEFAULT_EMERGENCY_PLAN,
+  DEFAULT_PREFERENCES,
+  DEFAULT_USER_PROFILE,
+} from '../utils/constants';
 
 const initialSensors = {
   ax: 0,
@@ -18,11 +23,21 @@ const initialState = {
   crashDetected: false,
   sosTriggered: false,
   dispatchLog: [],
-  userProfile: {
-    name: '',
-    phone: '',
-    emergencyContact: {name: '', phone: ''},
-    vehicleMode: 'biker',
+  userProfile: DEFAULT_USER_PROFILE,
+  preferences: DEFAULT_PREFERENCES,
+  emergencyPlan: DEFAULT_EMERGENCY_PLAN,
+  runtime: {
+    firebaseReady: false,
+    sensorSource: 'idle',
+    startupMode: 'ready',
+    permissions: {
+      activity: false,
+      backgroundLocation: false,
+      location: false,
+      microphone: false,
+      notifications: false,
+      phoneState: false,
+    },
   },
   location: {lat: 0, lng: 0, address: ''},
 };
@@ -42,6 +57,34 @@ function reducer(state, action) {
       return {
         ...state,
         isMonitoring: action.payload,
+      };
+    case 'SET_PREFERENCES':
+      return {
+        ...state,
+        preferences: {
+          ...state.preferences,
+          ...action.payload,
+        },
+      };
+    case 'SET_EMERGENCY_PLAN':
+      return {
+        ...state,
+        emergencyPlan: {
+          ...state.emergencyPlan,
+          ...action.payload,
+        },
+      };
+    case 'SET_RUNTIME_STATUS':
+      return {
+        ...state,
+        runtime: {
+          ...state.runtime,
+          ...action.payload,
+          permissions: {
+            ...state.runtime.permissions,
+            ...(action.payload?.permissions ?? {}),
+          },
+        },
       };
     case 'UPDATE_SENSORS':
       return {
@@ -88,9 +131,11 @@ function reducer(state, action) {
       return {
         ...state,
         userProfile: {
+          ...DEFAULT_USER_PROFILE,
           ...state.userProfile,
           ...action.payload,
           emergencyContact: {
+            ...DEFAULT_USER_PROFILE.emergencyContact,
             ...state.userProfile.emergencyContact,
             ...(action.payload?.emergencyContact ?? {}),
           },

@@ -10,15 +10,23 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import BrandMark from '../components/BrandMark';
 import {useAppContext} from '../context/AppContext';
 import FirebaseService from '../services/FirebaseService';
-import {COLORS, STORAGE_KEYS} from '../utils/constants';
+import {
+  COLORS,
+  DEFAULT_USER_PROFILE,
+  MODE_META,
+  STORAGE_KEYS,
+} from '../utils/constants';
 
 const EMPTY_ERRORS = {
-  name: '',
-  phone: '',
   emergencyName: '',
   emergencyPhone: '',
+  name: '',
+  phone: '',
 };
 
 export default function LoginScreen({navigation}) {
@@ -26,24 +34,19 @@ export default function LoginScreen({navigation}) {
     state: {userProfile},
     dispatch,
   } = useAppContext();
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    emergencyName: '',
-    emergencyPhone: '',
-    vehicleMode: 'biker',
-  });
+  const [form, setForm] = useState(DEFAULT_USER_PROFILE);
   const [errors, setErrors] = useState(EMPTY_ERRORS);
   const [focusedField, setFocusedField] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setForm({
-      name: userProfile.name,
-      phone: userProfile.phone,
-      emergencyName: userProfile.emergencyContact?.name ?? '',
-      emergencyPhone: userProfile.emergencyContact?.phone ?? '',
-      vehicleMode: userProfile.vehicleMode || 'biker',
+      ...DEFAULT_USER_PROFILE,
+      ...userProfile,
+      emergencyContact: {
+        ...DEFAULT_USER_PROFILE.emergencyContact,
+        ...userProfile.emergencyContact,
+      },
     });
   }, [userProfile]);
 
@@ -51,25 +54,46 @@ export default function LoginScreen({navigation}) {
     () =>
       Object.values(errors).every(value => !value) &&
       Boolean(
-        form.name && form.phone && form.emergencyName && form.emergencyPhone,
+        form.name &&
+          form.phone &&
+          form.emergencyContact?.name &&
+          form.emergencyContact?.phone,
       ),
     [errors, form],
   );
 
   const validate = () => {
     const nextErrors = {
-      name: form.name ? '' : 'Full name is required.',
-      phone: form.phone ? '' : 'Phone number is required.',
-      emergencyName: form.emergencyName
+      emergencyName: form.emergencyContact?.name
         ? ''
         : 'Emergency contact name is required.',
-      emergencyPhone: form.emergencyPhone
+      emergencyPhone: form.emergencyContact?.phone
         ? ''
         : 'Emergency contact phone is required.',
+      name: form.name ? '' : 'Full name is required.',
+      phone: form.phone ? '' : 'Phone number is required.',
     };
 
     setErrors(nextErrors);
     return Object.values(nextErrors).every(value => !value);
+  };
+
+  const handleChange = (field, value) => {
+    if (field === 'emergencyName' || field === 'emergencyPhone') {
+      const mappedKey = field === 'emergencyName' ? 'name' : 'phone';
+      setForm(current => ({
+        ...current,
+        emergencyContact: {
+          ...current.emergencyContact,
+          [mappedKey]: value,
+        },
+      }));
+      setErrors(current => ({...current, [field]: ''}));
+      return;
+    }
+
+    setForm(current => ({...current, [field]: value}));
+    setErrors(current => ({...current, [field]: ''}));
   };
 
   const handleSubmit = async () => {
@@ -81,13 +105,16 @@ export default function LoginScreen({navigation}) {
 
     try {
       const profile = {
+        ...DEFAULT_USER_PROFILE,
+        ...form,
         name: form.name.trim(),
         phone: form.phone.trim(),
         emergencyContact: {
-          name: form.emergencyName.trim(),
-          phone: form.emergencyPhone.trim(),
+          name: form.emergencyContact?.name?.trim() ?? '',
+          phone: form.emergencyContact?.phone?.trim() ?? '',
         },
-        vehicleMode: form.vehicleMode,
+        medicalNotes: form.medicalNotes?.trim() ?? '',
+        vehicleId: form.vehicleId?.trim() ?? '',
       };
 
       const user = await FirebaseService.signInAnonymously();
@@ -111,25 +138,30 @@ export default function LoginScreen({navigation}) {
     }
   };
 
-  const renderInput = ({key, placeholder, keyboardType = 'default', value}) => (
-    <View style={styles.fieldBlock} key={key}>
+  const renderInput = ({
+    errorKey,
+    field,
+    keyboardType = 'default',
+    placeholder,
+    value,
+  }) => (
+    <View style={styles.fieldBlock} key={field}>
       <TextInput
         onBlur={() => setFocusedField('')}
-        onChangeText={text => {
-          setForm(current => ({...current, [key]: text}));
-          setErrors(current => ({...current, [key]: ''}));
-        }}
-        onFocus={() => setFocusedField(key)}
+        onChangeText={text => handleChange(field, text)}
+        onFocus={() => setFocusedField(field)}
         keyboardType={keyboardType}
         placeholder={placeholder}
         placeholderTextColor={COLORS.MUTED}
         style={[
           styles.input,
-          focusedField === key ? styles.inputFocused : null,
+          focusedField === field ? styles.inputFocused : null,
         ]}
         value={value}
       />
-      {errors[key] ? <Text style={styles.errorText}>{errors[key]}</Text> : null}
+      {errors[errorKey] ? (
+        <Text style={styles.errorText}>{errors[errorKey]}</Text>
+      ) : null}
     </View>
   );
 
@@ -140,71 +172,96 @@ export default function LoginScreen({navigation}) {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <Text style={styles.logo}>RESQ AI</Text>
-        <Text style={styles.subhead}>
-          AUTONOMOUS MILLISECOND ACCIDENT RESPONSE SYSTEM
-        </Text>
+        <LinearGradient
+          colors={['#10192B', '#131F35', '#16243D']}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+          style={styles.hero}>
+          <BrandMark
+            showWordmark
+            size={62}
+            subtitle="A smarter safety experience from the first screen"
+          />
+          <Text style={styles.heroTitle}>Set up your rescue identity</Text>
+          <Text style={styles.heroCopy}>
+            Add the essentials now. You can refine the rest inside the new
+            Profile and Safety tabs after sign-in.
+          </Text>
+        </LinearGradient>
 
-        {renderInput({key: 'name', placeholder: 'Full Name', value: form.name})}
         {renderInput({
-          key: 'phone',
-          placeholder: 'Phone Number',
+          errorKey: 'name',
+          field: 'name',
+          placeholder: 'Full name',
+          value: form.name,
+        })}
+        {renderInput({
+          errorKey: 'phone',
+          field: 'phone',
           keyboardType: 'phone-pad',
+          placeholder: 'Phone number',
           value: form.phone,
         })}
         {renderInput({
-          key: 'emergencyName',
-          placeholder: 'Emergency Contact Name',
-          value: form.emergencyName,
+          errorKey: 'emergencyName',
+          field: 'emergencyName',
+          placeholder: 'Emergency contact name',
+          value: form.emergencyContact?.name ?? '',
         })}
         {renderInput({
-          key: 'emergencyPhone',
-          placeholder: 'Emergency Contact Phone',
+          errorKey: 'emergencyPhone',
+          field: 'emergencyPhone',
           keyboardType: 'phone-pad',
-          value: form.emergencyPhone,
+          placeholder: 'Emergency contact phone',
+          value: form.emergencyContact?.phone ?? '',
         })}
 
-        <Text style={styles.sectionLabel}>Vehicle Type</Text>
-        <View style={styles.vehicleRow}>
-          {[
-            {label: 'BIKER', value: 'biker'},
-            {label: 'CAR', value: 'car'},
-          ].map(option => (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              key={option.value}
-              onPress={() =>
-                setForm(current => ({...current, vehicleMode: option.value}))
-              }
-              style={[
-                styles.vehicleToggle,
-                form.vehicleMode === option.value
-                  ? styles.vehicleToggleActive
-                  : null,
-              ]}>
-              <Text
+        <Text style={styles.sectionLabel}>Choose your main vehicle</Text>
+        <View style={styles.modeGrid}>
+          {Object.values(MODE_META).map(option => {
+            const selected = form.vehicleMode === option.value;
+
+            return (
+              <TouchableOpacity
+                activeOpacity={0.92}
+                key={option.value}
+                onPress={() =>
+                  setForm(current => ({
+                    ...current,
+                    vehicleMode: option.value,
+                  }))
+                }
                 style={[
-                  styles.vehicleToggleText,
-                  form.vehicleMode === option.value
-                    ? styles.vehicleToggleTextActive
-                    : null,
+                  styles.modeCard,
+                  selected ? styles.modeCardActive : null,
                 ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Ionicons
+                  color={selected ? option.accent : COLORS.MUTED2}
+                  name={option.icon}
+                  size={20}
+                />
+                <Text
+                  style={[
+                    styles.modeCardTitle,
+                    selected ? {color: option.accent} : null,
+                  ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <TouchableOpacity
-          activeOpacity={0.9}
-          disabled={submitting}
+          activeOpacity={0.92}
+          disabled={submitting || !isFormValid}
           onPress={handleSubmit}
           style={[
             styles.button,
             submitting || !isFormValid ? styles.buttonBusy : null,
           ]}>
           <Text style={styles.buttonText}>
-            {submitting ? 'SECURING PROFILE...' : 'START PROTECTING ME'}
+            {submitting ? 'Saving profile...' : 'Enter the app'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -219,31 +276,36 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
-    paddingTop: 80,
+    paddingTop: 34,
+    paddingBottom: 44,
   },
-  logo: {
-    color: COLORS.CYAN,
-    fontSize: 34,
-    fontWeight: '900',
-    letterSpacing: 3,
-    fontFamily: 'monospace',
+  hero: {
+    borderRadius: 26,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    marginBottom: 18,
   },
-  subhead: {
-    color: COLORS.MUTED2,
-    marginTop: 8,
-    marginBottom: 30,
-    fontSize: 12,
-    lineHeight: 18,
-    letterSpacing: 1,
+  heroTitle: {
+    color: COLORS.TEXT,
+    fontSize: 28,
+    fontWeight: '800',
+    marginTop: 22,
+  },
+  heroCopy: {
+    color: COLORS.TEXT_DIM,
+    marginTop: 10,
+    lineHeight: 22,
+    fontSize: 14,
   },
   fieldBlock: {
     marginBottom: 12,
   },
   input: {
-    backgroundColor: COLORS.BG2,
+    backgroundColor: COLORS.CARD,
     borderWidth: 1,
-    borderColor: COLORS.MUTED,
-    borderRadius: 12,
+    borderColor: COLORS.BORDER,
+    borderRadius: 16,
     color: COLORS.TEXT,
     padding: 14,
     fontSize: 14,
@@ -258,42 +320,38 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: COLORS.MUTED2,
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 12,
+    marginBottom: 12,
     fontSize: 12,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
   },
-  vehicleRow: {
+  modeGrid: {
     flexDirection: 'row',
-    marginBottom: 24,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  vehicleToggle: {
-    flex: 1,
-    height: 48,
-    borderRadius: 12,
+  modeCard: {
+    width: '48%',
+    backgroundColor: COLORS.CARD,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: COLORS.MUTED,
+    borderColor: COLORS.BORDER,
+    padding: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    backgroundColor: COLORS.BG2,
+    marginBottom: 12,
   },
-  vehicleToggleActive: {
-    borderColor: COLORS.CYAN,
-    backgroundColor: 'rgba(0,229,255,0.08)',
+  modeCardActive: {
+    backgroundColor: COLORS.CARD_ALT,
   },
-  vehicleToggleText: {
-    color: COLORS.MUTED2,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  vehicleToggleTextActive: {
-    color: COLORS.CYAN,
+  modeCardTitle: {
+    color: COLORS.TEXT,
+    fontWeight: '800',
+    marginLeft: 10,
   },
   button: {
-    backgroundColor: COLORS.PINK,
-    borderRadius: 14,
+    backgroundColor: COLORS.CYAN,
+    borderRadius: 18,
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
@@ -302,8 +360,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: COLORS.BG,
     fontWeight: '800',
-    letterSpacing: 1.3,
+    letterSpacing: 0.4,
   },
 });

@@ -8,23 +8,26 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import BrandMark from '../components/BrandMark';
 import {COLORS, STORAGE_KEYS} from '../utils/constants';
 
 const PAGES = [
   {
-    icon: '🛰️',
-    title: 'ALWAYS WATCHING',
-    body: 'ResQ AI monitors your accelerometer, gyroscope and microphone 24/7 — even when your screen is off.',
+    icon: 'pulse-outline',
+    title: 'Protection that stays alive',
+    body: 'Live telemetry when the device is ready, and smart preview data when you are testing on a simulator or missing permissions.',
   },
   {
-    icon: '⚡',
-    title: 'MILLISECOND RESPONSE',
-    body: 'The moment a crash is detected, a 10-second confirmation window opens. No response = SOS fired.',
+    icon: 'shield-checkmark-outline',
+    title: 'Real rescue flow',
+    body: 'A crash drill now fans out to a rescue desk, map, dispatch timeline, and emergency contact cascade instead of stopping at one mock screen.',
   },
   {
-    icon: '🚨',
-    title: 'AUTOMATED RESCUE',
-    body: 'Police, nearby aid, and your emergency contact are alerted instantly with your live GPS location.',
+    icon: 'options-outline',
+    title: 'More control',
+    body: 'You get dedicated Safety, Insights, and Profile areas for tuning detection, reviewing response behavior, and storing rescue details.',
   },
 ];
 
@@ -44,7 +47,9 @@ export default function OnboardingScreen({navigation}) {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#050816', '#0B1120', '#111B32']}
+      style={styles.container}>
       <FlatList
         ref={listRef}
         data={PAGES}
@@ -54,7 +59,10 @@ export default function OnboardingScreen({navigation}) {
         onMomentumScrollEnd={handleScrollEnd}
         renderItem={({item}) => (
           <View style={[styles.page, {width}]}>
-            <Text style={styles.icon}>{item.icon}</Text>
+            <BrandMark size={76} />
+            <View style={styles.iconWrap}>
+              <Ionicons color={COLORS.CYAN} name={item.icon} size={34} />
+            </View>
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.body}>{item.body}</Text>
           </View>
@@ -77,14 +85,14 @@ export default function OnboardingScreen({navigation}) {
 
         {activeIndex === PAGES.length - 1 ? (
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={0.92}
             onPress={handleGetStarted}
             style={styles.button}>
-            <Text style={styles.buttonText}>GET STARTED</Text>
+            <Text style={styles.buttonText}>Continue to setup</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={0.92}
             onPress={() => {
               const nextIndex = Math.min(activeIndex + 1, PAGES.length - 1);
               listRef.current?.scrollToIndex({
@@ -94,18 +102,17 @@ export default function OnboardingScreen({navigation}) {
               setActiveIndex(nextIndex);
             }}
             style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>NEXT</Text>
+            <Text style={styles.secondaryButtonText}>Next</Text>
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BG,
   },
   page: {
     flex: 1,
@@ -113,21 +120,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 28,
   },
-  icon: {
-    fontSize: 72,
-    marginBottom: 22,
+  iconWrap: {
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    backgroundColor: 'rgba(89, 216, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 28,
   },
   title: {
-    color: COLORS.CYAN,
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 2,
+    color: COLORS.TEXT,
+    fontSize: 30,
+    fontWeight: '800',
     textAlign: 'center',
-    fontFamily: 'monospace',
+    marginTop: 22,
   },
   body: {
     marginTop: 16,
-    color: COLORS.MUTED2,
+    color: COLORS.TEXT_DIM,
     textAlign: 'center',
     fontSize: 15,
     lineHeight: 24,
@@ -145,36 +156,36 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: 'rgba(123,133,168,0.35)',
+    backgroundColor: 'rgba(151, 166, 199, 0.35)',
     marginHorizontal: 6,
   },
   dotActive: {
     backgroundColor: COLORS.CYAN,
-    width: 22,
+    width: 24,
   },
   button: {
-    backgroundColor: COLORS.PINK,
-    borderRadius: 14,
+    backgroundColor: COLORS.CYAN,
+    borderRadius: 18,
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: COLORS.BG,
     fontWeight: '800',
-    letterSpacing: 1.5,
+    letterSpacing: 0.4,
   },
   secondaryButton: {
     height: 54,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: COLORS.MUTED,
+    borderColor: COLORS.BORDER,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.CARD,
   },
   secondaryButtonText: {
-    color: COLORS.MUTED2,
+    color: COLORS.TEXT,
     fontWeight: '700',
-    letterSpacing: 1.5,
   },
 });

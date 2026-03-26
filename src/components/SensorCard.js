@@ -1,15 +1,24 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Animated, StyleSheet, Text, View} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {COLORS} from '../utils/constants';
 
-export default function SensorCard({label, value, unit, color, percentage}) {
+export default function SensorCard({
+  label,
+  value,
+  unit,
+  color,
+  percentage,
+  icon = 'pulse-outline',
+  hint = '',
+}) {
   const progress = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
   useEffect(() => {
     Animated.timing(progress, {
       toValue: percentage,
-      duration: 300,
+      duration: 320,
       useNativeDriver: false,
     }).start();
   }, [percentage, progress]);
@@ -21,11 +30,20 @@ export default function SensorCard({label, value, unit, color, percentage}) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.topRow}>
+        <View style={[styles.iconWrap, {backgroundColor: `${color}18`}]}>
+          <Ionicons color={color} name={icon} size={18} />
+        </View>
+        <Text style={styles.label}>{label}</Text>
+      </View>
+
       <View style={styles.valueRow}>
         <Text style={[styles.value, {color}]}>{Number(value).toFixed(2)}</Text>
         <Text style={styles.unit}>{unit}</Text>
       </View>
+
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+
       <View
         onLayout={event => setTrackWidth(event.nativeEvent.layout.width)}
         style={styles.track}>
@@ -39,45 +57,62 @@ export default function SensorCard({label, value, unit, color, percentage}) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.CARD,
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: COLORS.MUTED,
     width: '48%',
+    backgroundColor: COLORS.CARD,
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
     marginBottom: 12,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
   label: {
-    fontSize: 10,
-    color: COLORS.MUTED2,
-    letterSpacing: 1.5,
-    marginBottom: 6,
-    textTransform: 'uppercase',
+    flex: 1,
+    color: COLORS.TEXT,
+    fontSize: 12,
+    fontWeight: '700',
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
+    marginTop: 18,
   },
   value: {
-    fontSize: 18,
+    fontSize: 24,
+    fontWeight: '800',
     fontFamily: 'monospace',
-    fontWeight: '700',
   },
   unit: {
-    fontSize: 10,
+    marginLeft: 6,
+    marginBottom: 4,
     color: COLORS.MUTED2,
-    marginLeft: 4,
-    marginBottom: 3,
+    fontSize: 11,
+  },
+  hint: {
+    marginTop: 8,
+    color: COLORS.MUTED2,
+    fontSize: 11,
   },
   track: {
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 2,
-    marginTop: 8,
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 999,
+    marginTop: 12,
     overflow: 'hidden',
   },
   fill: {
-    height: 3,
-    borderRadius: 2,
+    height: 5,
+    borderRadius: 999,
   },
 });

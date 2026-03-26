@@ -1,74 +1,89 @@
 import React, {useEffect, useRef} from 'react';
-import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
+import {Animated, Easing, StyleSheet, Text} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import BrandMark from '../components/BrandMark';
 import {COLORS, STORAGE_KEYS} from '../utils/constants';
 
-const LETTERS = ['R', 'E', 'S', 'Q', 'A', 'I'];
-
 export default function SplashScreen({navigation}) {
-  const ringPulse = useRef(new Animated.Value(0)).current;
-  const letterAnimations = useRef(
-    LETTERS.map(() => new Animated.Value(0)),
-  ).current;
+  const pulse = useRef(new Animated.Value(0)).current;
+  const translate = useRef(new Animated.Value(18)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const ringLoop = Animated.loop(
+    const pulseLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(ringPulse, {
+        Animated.timing(pulse, {
           toValue: 1,
-          duration: 1200,
+          duration: 1500,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-        Animated.timing(ringPulse, {
+        Animated.timing(pulse, {
           toValue: 0,
-          duration: 1200,
+          duration: 1500,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ]),
     );
 
-    ringLoop.start();
+    pulseLoop.start();
 
-    Animated.stagger(
-      120,
-      letterAnimations.map(animation =>
-        Animated.timing(animation, {
-          toValue: 1,
-          duration: 420,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ),
-    ).start();
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 550,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translate, {
+        toValue: 0,
+        duration: 550,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     const timer = setTimeout(async () => {
-      const onboarded = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED);
-      navigation.replace(onboarded === 'true' ? 'Login' : 'Onboarding');
-    }, 2500);
+      const [onboarded, savedProfile] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED),
+        AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
+      ]);
+
+      const hasProfile = Boolean(savedProfile);
+
+      if (onboarded !== 'true') {
+        navigation.replace('Onboarding');
+        return;
+      }
+
+      navigation.replace(hasProfile ? 'MainTabs' : 'Login');
+    }, 2100);
 
     return () => {
-      ringLoop.stop();
+      pulseLoop.stop();
       clearTimeout(timer);
     };
-  }, [letterAnimations, navigation, ringPulse]);
+  }, [navigation, opacity, pulse, translate]);
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#050816', '#0B1120', '#111B32']}
+      style={styles.container}>
       <Animated.View
         style={[
-          styles.ring,
+          styles.backdropOrb,
           {
-            opacity: ringPulse.interpolate({
+            opacity: pulse.interpolate({
               inputRange: [0, 1],
-              outputRange: [0.25, 0.7],
+              outputRange: [0.22, 0.58],
             }),
             transform: [
               {
-                scale: ringPulse.interpolate({
+                scale: pulse.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0.95, 1.15],
+                  outputRange: [0.96, 1.14],
                 }),
               },
             ],
@@ -76,68 +91,57 @@ export default function SplashScreen({navigation}) {
         ]}
       />
 
-      <View style={styles.logoRow}>
-        {LETTERS.map((letter, index) => (
-          <Animated.Text
-            key={letter}
-            style={[
-              styles.logoLetter,
-              letter === 'Q' ? styles.logoAccent : null,
-              {
-                opacity: letterAnimations[index],
-                transform: [
-                  {
-                    translateY: letterAnimations[index].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}>
-            {letter}
-          </Animated.Text>
-        ))}
-      </View>
-
-      <Text style={styles.subtitle}>AUTONOMOUS ACCIDENT RESPONSE</Text>
-    </View>
+      <Animated.View
+        style={[
+          styles.content,
+          {opacity, transform: [{translateY: translate}]},
+        ]}>
+        <BrandMark
+          showWordmark
+          size={82}
+          subtitle="Accident intelligence with real rescue follow-through"
+          title="ResQ AI"
+        />
+        <Text style={styles.heading}>Protection that feels like a product</Text>
+        <Text style={styles.caption}>
+          Live safety monitoring, smarter rescue drills, and emergency response
+          tools in one place.
+        </Text>
+      </Animated.View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BG,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 28,
   },
-  ring: {
+  backdropOrb: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 1,
-    borderColor: 'rgba(0,229,255,0.45)',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(89, 216, 255, 0.16)',
   },
-  logoRow: {
-    flexDirection: 'row',
+  content: {
     alignItems: 'center',
   },
-  logoLetter: {
-    fontSize: 44,
-    fontWeight: '900',
-    color: COLORS.CYAN,
-    letterSpacing: 2,
-    fontFamily: 'monospace',
+  heading: {
+    marginTop: 26,
+    color: COLORS.TEXT,
+    fontSize: 28,
+    fontWeight: '800',
+    textAlign: 'center',
   },
-  logoAccent: {
-    color: COLORS.PINK,
-  },
-  subtitle: {
-    marginTop: 18,
-    color: COLORS.MUTED,
-    fontSize: 12,
-    letterSpacing: 4,
+  caption: {
+    marginTop: 14,
+    color: COLORS.MUTED2,
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: 14,
+    maxWidth: 300,
   },
 });

@@ -9,7 +9,7 @@ import {
 } from 'react-native-sensors';
 import CrashDetectionService from './CrashDetectionService';
 import LocationService from './LocationService';
-import {CRASH_THRESHOLDS} from '../utils/constants';
+import {CRASH_THRESHOLDS, DEFAULT_REGION} from '../utils/constants';
 import {normaliseDecibel} from '../utils/helpers';
 
 const backgroundOptions = {
@@ -28,7 +28,15 @@ class SensorService {
 
   gyroSubscription = null;
 
+  demoInterval = null;
+
   monitoring = false;
+
+  lastLiveEventAt = 0;
+
+  sensorSource = 'idle';
+
+  onStatusChange = null;
 
   currentData = {
     ax: 0,
@@ -59,7 +67,7 @@ class SensorService {
     });
   };
 
-  updateCallbacks({onSensorUpdate, onLocationUpdate, onCrash}) {
+  updateCallbacks({onSensorUpdate, onLocationUpdate, onCrash, onStatusChange}) {
     if (onSensorUpdate) {
       this.onSensorUpdate = onSensorUpdate;
     }
@@ -72,10 +80,28 @@ class SensorService {
       this.onCrash = onCrash;
       CrashDetectionService.setCallback(onCrash);
     }
+
+    if (onStatusChange) {
+      this.onStatusChange = onStatusChange;
+    }
   }
 
   emitSensorUpdate() {
     this.onSensorUpdate?.({...this.currentData});
+  }
+
+  setSensorSource(nextSource) {
+    if (this.sensorSource === nextSource) {
+      return;
+    }
+
+    this.sensorSource = nextSource;
+    this.onStatusChange?.({sensorSource: nextSource});
+  }
+
+  markLiveEvent() {
+    this.lastLiveEventAt = Date.now();
+    this.setSensorSource('live');
   }
 
   evaluateCrash() {
@@ -120,23 +146,34 @@ class SensorService {
     setUpdateIntervalForType(SensorTypes.accelerometer, 100);
     setUpdateIntervalForType(SensorTypes.gyroscope, 100);
 
-    this.accelSubscription = accelerometer.subscribe(({x, y, z}) => {
-      this.currentData.ax = x;
-      this.currentData.ay = y;
-      this.currentData.az = z;
-      this.emitSensorUpdate();
-      this.evaluateCrash();
-    });
+    try {
+      this.accelSubscription = accelerometer.subscribe(({x, y, z}) => {
+        this.markLiveEvent();
+        this.currentData.ax = x;
+        this.currentData.ay = y;
+        this.currentData.az = z;
+        this.emitSensorUpdate();
+        this.evaluateCrash();
+      });
+    } catch (error) {
+      console.log('Accelerometer unavailable', error);
+    }
 
-    this.gyroSubscription = gyroscope.subscribe(({x, y, z}) => {
-      this.currentData.gx = x;
-      this.currentData.gy = y;
-      this.currentData.gz = z;
-      this.emitSensorUpdate();
-      this.evaluateCrash();
-    });
+    try {
+      this.gyroSubscription = gyroscope.subscribe(({x, y, z}) => {
+        this.markLiveEvent();
+        this.currentData.gx = x;
+        this.currentData.gy = y;
+        this.currentData.gz = z;
+        this.emitSensorUpdate();
+        this.evaluateCrash();
+      });
+    } catch (error) {
+      console.log('Gyroscope unavailable', error);
+    }
 
     LocationService.startWatching(async nextLocation => {
+      this.markLiveEvent();
       this.currentData.speed = nextLocation.speed;
       this.emitSensorUpdate();
       this.evaluateCrash();
@@ -155,15 +192,78 @@ class SensorService {
     LocationService.stopWatching();
   }
 
+  startDemoLoop(mode = 'biker') {
+    this.stopDemoLoop();
+
+    this.demoInterval = setInterval(() => {
+      if (!this.monitoring) {
+        return;
+      }
+
+      if (Date.now() - this.lastLiveEventAt <= 1600) {
+        return;
+      }
+
+      const phase = Date.now() / 850;
+      const threshold = CRASH_THRESHOLDS[mode] ?? CRASH_THRESHOLDS.biker;
+      const motionScale = mode === 'family' ? 0.75 : mode === 'car' ? 0.9 : 1;
+
+      this.setSensorSource('preview');
+      this.currentData = {
+        ...this.currentData,
+        ax: Number((Math.sin(phase) * 1.8 * motionScale).toFixed(2)),
+        ay: Number((Math.cos(phase * 1.3) * 1.5 * motionScale).toFixed(2)),
+        az: Number((9.6 + Math.sin(phase * 0.5) * 0.4).toFixed(2)),
+        gx: Number((Math.sin(phase * 0.8) * 24 * motionScale).toFixed(2)),
+        gy: Number((Math.cos(phase * 0.9) * 18 * motionScale).toFixed(2)),
+        gz: Number((Math.sin(phase * 1.1) * 12 * motionScale).toFixed(2)),
+        speed: Number(
+          Math.max(
+            6,
+            26 + Math.sin(phase * 0.7) * 8 + (mode === 'scooter' ? 4 : 0),
+          ).toFixed(2),
+        ),
+        db: Number(
+          Math.min(
+            threshold.audioDb - 18,
+            46 + Math.abs(Math.cos(phase * 1.2)) * 12,
+          ).toFixed(2),
+        ),
+      };
+
+      this.emitSensorUpdate();
+      this.onLocationUpdate?.({
+        lat: DEFAULT_REGION.latitude + Math.sin(phase / 4) * 0.0018,
+        lng: DEFAULT_REGION.longitude + Math.cos(phase / 4) * 0.0018,
+        address: 'Smart preview route',
+      });
+    }, 1200);
+  }
+
+  stopDemoLoop() {
+    if (this.demoInterval) {
+      clearInterval(this.demoInterval);
+      this.demoInterval = null;
+    }
+  }
+
   async startBackgroundMonitoring() {
-    if (!BackgroundActions.isRunning()) {
-      await BackgroundActions.start(this.backgroundTask, backgroundOptions);
+    try {
+      if (!BackgroundActions.isRunning()) {
+        await BackgroundActions.start(this.backgroundTask, backgroundOptions);
+      }
+    } catch (error) {
+      console.log('Background monitor unavailable', error);
     }
   }
 
   async stopBackgroundMonitoring() {
-    if (BackgroundActions.isRunning()) {
-      await BackgroundActions.stop();
+    try {
+      if (BackgroundActions.isRunning()) {
+        await BackgroundActions.stop();
+      }
+    } catch (error) {
+      console.log('Background monitor stop', error);
     }
   }
 
@@ -172,8 +272,14 @@ class SensorService {
     onSensorUpdate,
     onLocationUpdate,
     onCrash,
+    onStatusChange,
   }) {
-    this.updateCallbacks({onSensorUpdate, onLocationUpdate, onCrash});
+    this.updateCallbacks({
+      onSensorUpdate,
+      onLocationUpdate,
+      onCrash,
+      onStatusChange,
+    });
     CrashDetectionService.setMode(mode);
 
     if (this.monitoring) {
@@ -183,6 +289,8 @@ class SensorService {
     }
 
     this.monitoring = true;
+    this.lastLiveEventAt = 0;
+    this.setSensorSource('preview');
     this.currentData = {
       ax: 0,
       ay: 0,
@@ -195,6 +303,7 @@ class SensorService {
     };
 
     this.subscribeSensors();
+    this.startDemoLoop(mode);
     await this.startAudioMetering();
     await this.startBackgroundMonitoring();
     this.emitSensorUpdate();
@@ -204,8 +313,10 @@ class SensorService {
 
   async stopMonitoring() {
     this.monitoring = false;
+    this.stopDemoLoop();
     this.unsubscribeSensors();
     CrashDetectionService.reset();
+    this.setSensorSource('idle');
     await this.stopAudioMetering();
     await this.stopBackgroundMonitoring();
   }
@@ -215,7 +326,8 @@ class SensorService {
   }
 
   simulateCrash(mode = 'biker') {
-    const threshold = CRASH_THRESHOLDS[mode];
+    const threshold = CRASH_THRESHOLDS[mode] ?? CRASH_THRESHOLDS.biker;
+    this.setSensorSource('preview');
     this.currentData = {
       ax: threshold.accelMagnitude * 0.95,
       ay: threshold.accelMagnitude * 0.88,

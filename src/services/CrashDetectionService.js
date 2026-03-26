@@ -29,7 +29,7 @@ class CrashDetectionService {
     }
 
     const {ax, ay, az, gx, gy, gz, speed, db} = sensorData;
-    const thresholds = CRASH_THRESHOLDS[this.mode];
+    const thresholds = CRASH_THRESHOLDS[this.mode] ?? CRASH_THRESHOLDS.biker;
     const accelMag = calculateMagnitude(ax, ay, az);
     const gyroMag = calculateMagnitude(gx, gy, gz);
     const speedThreshold = 1 - thresholds.speedDropPercent / 100;

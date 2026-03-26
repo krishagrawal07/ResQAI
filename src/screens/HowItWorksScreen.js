@@ -1,130 +1,189 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, {useMemo} from 'react';
+import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {COLORS} from '../utils/constants';
+import {useAppContext} from '../context/AppContext';
+import {COLORS, MODE_META} from '../utils/constants';
+import {formatSensorSource} from '../utils/helpers';
 
-const SECTIONS = [
+const PIPELINE = [
   {
     key: 'detect',
     color: COLORS.CYAN,
-    icon: 'scan-circle-outline',
-    title: 'DETECT',
-    subtitle: 'Sensor fusion and edge inference',
-    features: [
-      'Accelerometer Matrix',
-      'Gyroscope Tracking',
-      'Acoustic Audio AI',
-      'Edge Processing',
-    ],
+    icon: 'scan-outline',
+    title: 'Detect',
+    subtitle:
+      'Sensor fusion watches motion, rotation, speed, and audio together.',
   },
   {
-    key: 'confirm',
+    key: 'verify',
+    color: COLORS.YELLOW,
+    icon: 'timer-outline',
+    title: 'Verify',
+    subtitle:
+      'A cancellation window reduces false alarms without adding much delay.',
+  },
+  {
+    key: 'dispatch',
     color: COLORS.PINK,
-    icon: 'pulse-outline',
-    title: 'CONFIRM',
-    subtitle: 'False alarm containment layer',
-    features: [
-      'SOS Confirmation Loop',
-      'No Response Assumption',
-      'Automated Dispatch Trigger',
-      'False Alarm Prevention',
-    ],
-  },
-  {
-    key: 'rescue',
-    color: COLORS.GREEN,
-    icon: 'shield-checkmark-outline',
-    title: 'RESCUE',
-    subtitle: 'Live location and responders',
-    features: [
-      'Live GPS Dispatch',
-      'Police Station Alert',
-      'Ground-Zero Local Aid',
-      'Offline SMS Failsafe',
-    ],
+    icon: 'paper-plane-outline',
+    title: 'Dispatch',
+    subtitle:
+      'Contacts, local support points, and rescue actions cascade automatically.',
   },
 ];
 
-function ExpandableCard({section, expanded, onToggle}) {
-  const animatedHeight = useRef(new Animated.Value(expanded ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.timing(animatedHeight, {
-      toValue: expanded ? 1 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [animatedHeight, expanded]);
-
-  return (
-    <View style={styles.card}>
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={onToggle}
-        style={styles.header}>
-        <View
-          style={[styles.iconCircle, {backgroundColor: `${section.color}18`}]}>
-          <Ionicons color={section.color} name={section.icon} size={20} />
-        </View>
-        <View style={styles.headerCopy}>
-          <Text style={styles.cardTitle}>{section.title}</Text>
-          <Text style={styles.cardSubtitle}>{section.subtitle}</Text>
-        </View>
-        <Ionicons
-          color={section.color}
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={20}
-        />
-      </TouchableOpacity>
-
-      <Animated.View
-        style={[
-          styles.body,
-          {
-            maxHeight: animatedHeight.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 300],
-            }),
-            opacity: animatedHeight,
-          },
-        ]}>
-        {section.features.map(feature => (
-          <View key={feature} style={styles.featureRow}>
-            <View
-              style={[styles.featureDot, {backgroundColor: section.color}]}
-            />
-            <Text style={styles.featureText}>{feature}</Text>
-          </View>
-        ))}
-      </Animated.View>
-    </View>
-  );
-}
-
 export default function HowItWorksScreen() {
-  const [expandedKey, setExpandedKey] = useState('detect');
+  const {
+    state: {dispatchLog, isMonitoring, mode, runtime, userProfile},
+  } = useAppContext();
+
+  const liveInsights = useMemo(
+    () => [
+      {
+        key: 'profile',
+        label: 'Active profile',
+        value: MODE_META[mode]?.label ?? 'Bike',
+      },
+      {
+        key: 'state',
+        label: 'Protection state',
+        value: isMonitoring ? 'Armed' : 'Standby',
+      },
+      {
+        key: 'feed',
+        label: 'Sensor feed',
+        value: formatSensorSource(runtime.sensorSource),
+      },
+      {
+        key: 'contact',
+        label: 'Primary contact',
+        value: userProfile.emergencyContact?.name || 'Not added yet',
+      },
+    ],
+    [isMonitoring, mode, runtime.sensorSource, userProfile.emergencyContact],
+  );
+
+  const timeline = [
+    {
+      key: 'standby',
+      icon: 'shield-checkmark-outline',
+      title: isMonitoring ? 'Protection is armed' : 'Protection is standing by',
+      subtitle: isMonitoring
+        ? 'Your selected vehicle profile is actively watching the telemetry feed.'
+        : 'Open Protect and arm the monitor when you are ready to travel.',
+      accent: isMonitoring ? COLORS.GREEN : COLORS.YELLOW,
+    },
+    {
+      key: 'preview',
+      icon: 'pulse-outline',
+      title:
+        runtime.sensorSource === 'preview'
+          ? 'Preview feed is keeping the UI alive'
+          : 'Live feed is flowing from the device',
+      subtitle:
+        runtime.sensorSource === 'preview'
+          ? 'This helps the app feel complete on simulators or when permissions are missing.'
+          : 'Your sensors are delivering real updates for the crash model.',
+      accent: runtime.sensorSource === 'preview' ? COLORS.YELLOW : COLORS.CYAN,
+    },
+    {
+      key: 'dispatch',
+      icon: 'navigate-outline',
+      title:
+        dispatchLog.length > 0
+          ? `${dispatchLog.length} response lanes are active`
+          : 'No active dispatch lanes yet',
+      subtitle:
+        dispatchLog.length > 0
+          ? 'Open Rescue to inspect the live map, timelines, and ETA cards.'
+          : 'Run a rescue drill to preview contacts, landmarks, and responders.',
+      accent: dispatchLog.length > 0 ? COLORS.PINK : COLORS.MUTED2,
+    },
+  ];
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      {SECTIONS.map(section => (
-        <ExpandableCard
-          expanded={expandedKey === section.key}
-          key={section.key}
-          onToggle={() =>
-            setExpandedKey(current =>
-              current === section.key ? '' : section.key,
-            )
-          }
-          section={section}
-        />
+      <LinearGradient
+        colors={['#10192B', '#131F35', '#16243D']}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}
+        style={styles.hero}>
+        <View style={styles.heroBadge}>
+          <Ionicons color={COLORS.CYAN} name="analytics-outline" size={18} />
+          <Text style={styles.heroBadgeText}>Product insights</Text>
+        </View>
+        <Text style={styles.heroTitle}>Why this feels like a real app now</Text>
+        <Text style={styles.heroCopy}>
+          The experience is no longer just a sensor mockup. It now carries a
+          proper safety flow, profile system, response desk, configurable rescue
+          settings, and a preview mode that prevents dead screens.
+        </Text>
+      </LinearGradient>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Response pipeline</Text>
+        <Text style={styles.sectionCaption}>
+          The three layers of the rescue journey
+        </Text>
+      </View>
+
+      {PIPELINE.map(item => (
+        <View key={item.key} style={styles.pipelineCard}>
+          <View
+            style={[
+              styles.pipelineIconWrap,
+              {backgroundColor: `${item.color}18`},
+            ]}>
+            <Ionicons color={item.color} name={item.icon} size={22} />
+          </View>
+          <View style={styles.pipelineCopy}>
+            <Text style={styles.pipelineTitle}>{item.title}</Text>
+            <Text style={styles.pipelineSubtitle}>{item.subtitle}</Text>
+          </View>
+        </View>
       ))}
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Live insights</Text>
+        <Text style={styles.sectionCaption}>
+          Signals from your current app state
+        </Text>
+      </View>
+
+      <View style={styles.insightGrid}>
+        {liveInsights.map(item => (
+          <View key={item.key} style={styles.insightCard}>
+            <Text style={styles.insightLabel}>{item.label}</Text>
+            <Text style={styles.insightValue}>{item.value}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Operational timeline</Text>
+        <Text style={styles.sectionCaption}>
+          A quick read on what the system is doing right now
+        </Text>
+      </View>
+
+      <View style={styles.timelineCard}>
+        {timeline.map(item => (
+          <View key={item.key} style={styles.timelineRow}>
+            <View
+              style={[
+                styles.timelineIcon,
+                {backgroundColor: `${item.accent}18`},
+              ]}>
+              <Ionicons color={item.accent} name={item.icon} size={18} />
+            </View>
+            <View style={styles.timelineCopy}>
+              <Text style={styles.timelineTitle}>{item.title}</Text>
+              <Text style={styles.timelineSubtitle}>{item.subtitle}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -136,22 +195,65 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 28,
+    paddingBottom: 120,
   },
-  card: {
-    backgroundColor: COLORS.CARD,
-    borderRadius: 18,
+  hero: {
+    borderRadius: 26,
+    padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(0,229,255,0.08)',
-    marginBottom: 14,
-    overflow: 'hidden',
+    borderColor: COLORS.BORDER,
+    marginBottom: 18,
   },
-  header: {
+  heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  iconCircle: {
+  heroBadgeText: {
+    color: COLORS.TEXT,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  heroTitle: {
+    marginTop: 22,
+    color: COLORS.TEXT,
+    fontSize: 27,
+    fontWeight: '800',
+  },
+  heroCopy: {
+    marginTop: 10,
+    color: COLORS.TEXT_DIM,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  sectionHeader: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: COLORS.TEXT,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  sectionCaption: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  pipelineCard: {
+    backgroundColor: COLORS.CARD,
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  pipelineIconWrap: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -159,36 +261,77 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  headerCopy: {
+  pipelineCopy: {
     flex: 1,
   },
-  cardTitle: {
+  pipelineTitle: {
     color: COLORS.TEXT,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
-  cardSubtitle: {
+  pipelineSubtitle: {
+    color: COLORS.MUTED2,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 6,
+  },
+  insightGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  insightCard: {
+    width: '48%',
+    backgroundColor: COLORS.CARD,
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    marginBottom: 12,
+  },
+  insightLabel: {
     color: COLORS.MUTED2,
     fontSize: 12,
-    marginTop: 4,
   },
-  body: {
-    paddingHorizontal: 16,
-    overflow: 'hidden',
+  insightValue: {
+    color: COLORS.TEXT,
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 8,
   },
-  featureRow: {
+  timelineCard: {
+    backgroundColor: COLORS.CARD,
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+  },
+  timelineRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 12,
+    alignItems: 'flex-start',
+    paddingVertical: 12,
   },
-  featureDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  timelineIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
-  featureText: {
+  timelineCopy: {
+    flex: 1,
+  },
+  timelineTitle: {
     color: COLORS.TEXT,
     fontSize: 14,
+    fontWeight: '800',
+  },
+  timelineSubtitle: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 6,
   },
 });

@@ -24,3 +24,624 @@ info Changelog: https://github.com/facebook/react-native/releases/tag/v0.84.1
 info Diff: https://react-native-community.github.io/upgrade-helper/?from=0.84.1
 info For more info, check out "https://reactnative.dev/docs/upgrading?os=windows".
 info Dev server ready
+ BUNDLE  ./index.js 
+
+ LOG  Running "ResQAI" with {"rootTag":11}
+ LOG  Anonymous auth fallback [Error: No Firebase App '[DEFAULT]' has been created - call firebase.initializeApp()]
+ LOG  Location watch error {"code": 1, "message": "Location permission not granted."}
+ LOG  Audio metering unavailable [Error: Try again after adding permission.]
+ BUNDLE  ./index.js 
+
+ LOG  Running "ResQAI" with {"rootTag":11}
+ LOG  Anonymous auth fallback [Error: No Firebase App '[DEFAULT]' has been created - call firebase.initializeApp()]
+ BUNDLE  ./index.js 
+
+ BUNDLE  ./index.js 
+
+ BUNDLE  ./index.js 
+
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+error: Error: Unable to resolve module ../screens/SplashScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\SplashScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\SplashScreen
+  3 | import {createStackNavigator} from '@react-navigation/stack';
+  4 | import Ionicons from 'react-native-vector-icons/Ionicons';
+> 5 | import SplashScreen from '../screens/SplashScreen';
+    |                           ^
+  6 | import OnboardingScreen from '../screens/OnboardingScreen';
+  7 | import LoginScreen from '../screens/LoginScreen';
+  8 | import MonitorScreen from '../screens/MonitorScreen';
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/MonitorScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\MonitorScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\MonitorScreen
+   6 | import OnboardingScreen from '../screens/OnboardingScreen';
+   7 | import LoginScreen from '../screens/LoginScreen';
+>  8 | import MonitorScreen from '../screens/MonitorScreen';
+     |                            ^
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+  11 | import ProfileScreen from '../screens/ProfileScreen';
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/DispatchScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\DispatchScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\DispatchScreen
+   7 | import LoginScreen from '../screens/LoginScreen';
+   8 | import MonitorScreen from '../screens/MonitorScreen';
+>  9 | import DispatchScreen from '../screens/DispatchScreen';
+     |                             ^
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+  11 | import ProfileScreen from '../screens/ProfileScreen';
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+> 11 | import ProfileScreen from '../screens/ProfileScreen';
+     |                            ^
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+  14 |
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/HowItWorksScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\HowItWorksScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\HowItWorksScreen
+   8 | import MonitorScreen from '../screens/MonitorScreen';
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+> 10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+     |                               ^
+  11 | import ProfileScreen from '../screens/ProfileScreen';
+  12 | import SafetyScreen from '../screens/SafetyScreen';
+  13 | import {COLORS} from '../utils/constants';
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/LoginScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\LoginScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\LoginScreen
+   5 | import SplashScreen from '../screens/SplashScreen';
+   6 | import OnboardingScreen from '../screens/OnboardingScreen';
+>  7 | import LoginScreen from '../screens/LoginScreen';
+     |                          ^
+   8 | import MonitorScreen from '../screens/MonitorScreen';
+   9 | import DispatchScreen from '../screens/DispatchScreen';
+  10 | import HowItWorksScreen from '../screens/HowItWorksScreen';
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../screens/OnboardingScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\OnboardingScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\OnboardingScreen
+  4 | import Ionicons from 'react-native-vector-icons/Ionicons';
+  5 | import SplashScreen from '../screens/SplashScreen';
+> 6 | import OnboardingScreen from '../screens/OnboardingScreen';
+    |                               ^
+  7 | import LoginScreen from '../screens/LoginScreen';
+  8 | import MonitorScreen from '../screens/MonitorScreen';
+  9 | import DispatchScreen from '../screens/DispatchScreen';
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+error: Error: Unable to resolve module ../components/CrashAlertModal from C:\ResQAI\src\screens\MonitorScreen.js: 
+
+None of these files exist:
+  * src\components\CrashAlertModal(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\components\CrashAlertModal
+  19 | import Ionicons from 'react-native-vector-icons/Ionicons';
+  20 | import BrandMark from '../components/BrandMark';
+> 21 | import CrashAlertModal from '../components/CrashAlertModal';
+     |                              ^
+  22 | import SensorCard from '../components/SensorCard';
+  23 | import {useAppContext} from '../context/AppContext';
+  24 | import CrashDetectionService from '../services/CrashDetectionService';
+    at ModuleResolver.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:112:15)
+    at DependencyGraph.resolveDependency (C:\ResQAI\node_modules\metro\src\node-haste\DependencyGraph.js:232:43)
+    at C:\ResQAI\node_modules\metro\src\lib\transformHelpers.js:156:21
+    at resolveDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:42:25)
+    at visit (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:83:30)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\ResQAI\node_modules\metro\src\DeltaBundler\buildSubgraph.js:103:3)
+    at async Graph._buildDelta (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:157:22)
+    at async Graph.traverseDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\Graph.js:49:19)
+    at async DeltaCalculator._getChangedDependencies (C:\ResQAI\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:187:42)
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/SplashScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\SplashScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\SplashScreen
+[0m [90m 3 |[39m [36mimport[39m {createStackNavigator} [36mfrom[39m [32m'@react-navigation/stack'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m [33mIonicons[39m [36mfrom[39m [32m'react-native-vector-icons/Ionicons'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [33mSplashScreen[39m [36mfrom[39m [32m'../screens/SplashScreen'[39m[33m;[39m
+ [90m   |[39m                           [31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m [33mOnboardingScreen[39m [36mfrom[39m [32m'../screens/OnboardingScreen'[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m [33mLoginScreen[39m [36mfrom[39m [32m'../screens/LoginScreen'[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m [33mMonitorScreen[39m [36mfrom[39m [32m'../screens/MonitorScreen'[39m[33m;[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/MonitorScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\MonitorScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\MonitorScreen
+[0m [90m  6 |[39m [36mimport[39m [33mOnboardingScreen[39m [36mfrom[39m [32m'../screens/OnboardingScreen'[39m[33m;[39m
+ [90m  7 |[39m [36mimport[39m [33mLoginScreen[39m [36mfrom[39m [32m'../screens/LoginScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  8 |[39m [36mimport[39m [33mMonitorScreen[39m [36mfrom[39m [32m'../screens/MonitorScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+ [90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/DispatchScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\DispatchScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\DispatchScreen
+[0m [90m  7 |[39m [36mimport[39m [33mLoginScreen[39m [36mfrom[39m [32m'../screens/LoginScreen'[39m[33m;[39m
+ [90m  8 |[39m [36mimport[39m [33mMonitorScreen[39m [36mfrom[39m [32m'../screens/MonitorScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m    |[39m                             [31m[1m^[22m[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+ [90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/ProfileScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\ProfileScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\ProfileScreen
+[0m [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m    |[39m                            [31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m
+ [90m 14 |[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/HowItWorksScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\HowItWorksScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\HowItWorksScreen
+[0m [90m  8 |[39m [36mimport[39m [33mMonitorScreen[39m [36mfrom[39m [32m'../screens/MonitorScreen'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m [33mProfileScreen[39m [36mfrom[39m [32m'../screens/ProfileScreen'[39m[33m;[39m
+ [90m 12 |[39m [36mimport[39m [33mSafetyScreen[39m [36mfrom[39m [32m'../screens/SafetyScreen'[39m[33m;[39m
+ [90m 13 |[39m [36mimport[39m {[33mCOLORS[39m} [36mfrom[39m [32m'../utils/constants'[39m[33m;[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/LoginScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\LoginScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\LoginScreen
+[0m [90m  5 |[39m [36mimport[39m [33mSplashScreen[39m [36mfrom[39m [32m'../screens/SplashScreen'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m [33mOnboardingScreen[39m [36mfrom[39m [32m'../screens/OnboardingScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33mLoginScreen[39m [36mfrom[39m [32m'../screens/LoginScreen'[39m[33m;[39m
+ [90m    |[39m                          [31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m [33mMonitorScreen[39m [36mfrom[39m [32m'../screens/MonitorScreen'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mHowItWorksScreen[39m [36mfrom[39m [32m'../screens/HowItWorksScreen'[39m[33m;[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../screens/OnboardingScreen from C:\ResQAI\src\navigation\AppNavigator.js: 
+
+None of these files exist:
+  * src\screens\OnboardingScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\OnboardingScreen
+[0m [90m 4 |[39m [36mimport[39m [33mIonicons[39m [36mfrom[39m [32m'react-native-vector-icons/Ionicons'[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m [33mSplashScreen[39m [36mfrom[39m [32m'../screens/SplashScreen'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33mOnboardingScreen[39m [36mfrom[39m [32m'../screens/OnboardingScreen'[39m[33m;[39m
+ [90m   |[39m                               [31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m [33mLoginScreen[39m [36mfrom[39m [32m'../screens/LoginScreen'[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m [33mMonitorScreen[39m [36mfrom[39m [32m'../screens/MonitorScreen'[39m[33m;[39m
+ [90m 9 |[39m [36mimport[39m [33mDispatchScreen[39m [36mfrom[39m [32m'../screens/DispatchScreen'[39m[33m;[39m[0m]
+ ERROR  [Error: undefined Unable to resolve module ../components/CrashAlertModal from C:\ResQAI\src\screens\MonitorScreen.js: 
+
+None of these files exist:
+  * src\components\CrashAlertModal(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\components\CrashAlertModal
+[0m [90m 19 |[39m [36mimport[39m [33mIonicons[39m [36mfrom[39m [32m'react-native-vector-icons/Ionicons'[39m[33m;[39m
+ [90m 20 |[39m [36mimport[39m [33mBrandMark[39m [36mfrom[39m [32m'../components/BrandMark'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 21 |[39m [36mimport[39m [33mCrashAlertModal[39m [36mfrom[39m [32m'../components/CrashAlertModal'[39m[33m;[39m
+ [90m    |[39m                              [31m[1m^[22m[39m
+ [90m 22 |[39m [36mimport[39m [33mSensorCard[39m [36mfrom[39m [32m'../components/SensorCard'[39m[33m;[39m
+ [90m 23 |[39m [36mimport[39m {useAppContext} [36mfrom[39m [32m'../context/AppContext'[39m[33m;[39m
+ [90m 24 |[39m [36mimport[39m [33mCrashDetectionService[39m [36mfrom[39m [32m'../services/CrashDetectionService'[39m[33m;[39m[0m]
+ ERROR  TypeError: Cannot read property 'permissions' of undefined
+
+This error is located at:
+    in AppProvider (created by App)
+    in RNCSafeAreaProvider (created by SafeAreaProvider)
+    in SafeAreaProvider (created by App)
+    in App
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in RCTView (created by View)
+    in View (created by AppContainer)
+    in AppContainer
+    in ResQAI(RootComponent), js engine: hermes
+ BUNDLE  ./index.js 
+
+ LOG  Running "ResQAI" with {"rootTag":11}
+ BUNDLE  ./index.js 
+
+ LOG  Running "ResQAI" with {"rootTag":11}
+ LOG  Location watch error {"code": 1, "message": "Location permission not granted."}
+ BUNDLE  ./index.js 
+
+ BUNDLE  ./index.js 
+
+ BUNDLE  ./index.js 
+
+ LOG  Running "ResQAI" with {"rootTag":11}

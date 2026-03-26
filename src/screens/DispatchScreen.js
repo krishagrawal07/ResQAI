@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Animated,
   ScrollView,
@@ -7,16 +7,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useAppContext} from '../context/AppContext';
+import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import DispatchLog from '../components/DispatchLog';
 import LiveMap from '../components/LiveMap';
+import {useAppContext} from '../context/AppContext';
 import DispatchService from '../services/DispatchService';
 import {COLORS} from '../utils/constants';
 import {formatCoordinates} from '../utils/helpers';
 
 export default function DispatchScreen({navigation}) {
   const {
-    state: {dispatchLog, location, sosTriggered, userProfile},
+    state: {dispatchLog, location, sosTriggered, userProfile, runtime},
     dispatch,
   } = useAppContext();
   const bannerBlink = useRef(new Animated.Value(1)).current;
@@ -27,13 +29,13 @@ export default function DispatchScreen({navigation}) {
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(bannerBlink, {
-          toValue: 0,
-          duration: 600,
+          toValue: 0.25,
+          duration: 700,
           useNativeDriver: true,
         }),
         Animated.timing(bannerBlink, {
           toValue: 1,
-          duration: 600,
+          duration: 700,
           useNativeDriver: true,
         }),
       ]),
@@ -75,76 +77,196 @@ export default function DispatchScreen({navigation}) {
     return () => clearTimeout(completionTimer);
   }, [dispatch, dispatchLog.length, location, sosTriggered, userProfile]);
 
-  const handleReset = () => {
+  const handleReset = async () => {
     DispatchService.stopDispatchSequence();
     dispatch({type: 'RESET_CRASH'});
     navigation.navigate('Monitor');
   };
 
-  const bannerState = !sosTriggered
+  const heroTone = !sosTriggered
     ? {
-        borderColor: COLORS.MUTED,
-        text: 'AWAITING TRIGGER',
-        textColor: COLORS.MUTED2,
+        badge: 'Response armed',
+        copy: 'The rescue desk is ready. Run a rescue drill from Protect to preview the full flow.',
+        accent: COLORS.CYAN,
       }
     : allDispatched
     ? {
-        borderColor: COLORS.GREEN,
-        text: '✅ ALL UNITS DISPATCHED',
-        textColor: COLORS.GREEN,
+        badge: 'Units dispatched',
+        copy: 'Your emergency contact, responder points, and nearby support have all been engaged.',
+        accent: COLORS.GREEN,
       }
     : {
-        borderColor: COLORS.PINK,
-        text: 'DISPATCHING EMERGENCY UNITS',
-        textColor: COLORS.PINK,
+        badge: 'Dispatch in progress',
+        copy: 'Responder notifications are cascading. The map and response cards update as the network fans out.',
+        accent: COLORS.PINK,
       };
+
+  const responseCards = useMemo(
+    () => [
+      {
+        key: 'cascade',
+        label: 'Cascade',
+        value: `${dispatchLog.length}/4 live`,
+      },
+      {
+        key: 'feed',
+        label: 'Data source',
+        value: runtime.sensorSource === 'preview' ? 'Preview' : 'Live',
+      },
+      {
+        key: 'eta',
+        label: 'Best ETA',
+        value: allDispatched ? '4 min' : '2-4 min',
+      },
+    ],
+    [allDispatched, dispatchLog.length, runtime.sensorSource],
+  );
+
+  const checklist = [
+    {
+      key: 'gps',
+      label: 'GPS pin confirmed',
+      done: Boolean(location.lat && location.lng),
+    },
+    {
+      key: 'contact',
+      label: 'Emergency contact queued',
+      done: dispatchLog.some(item => item.type === 'contact'),
+    },
+    {
+      key: 'police',
+      label: 'Nearest authorities routed',
+      done: dispatchLog.some(item => item.type === 'police'),
+    },
+    {
+      key: 'ground',
+      label: 'Ground support landmark added',
+      done: dispatchLog.some(item => item.type === 'landmark'),
+    },
+  ];
+
+  const heroPulseColorStyle =
+    heroTone.accent === COLORS.GREEN
+      ? styles.heroPulseGreen
+      : heroTone.accent === COLORS.PINK
+      ? styles.heroPulsePink
+      : styles.heroPulseCyan;
+  const heroPulseOpacityStyle =
+    sosTriggered && !allDispatched
+      ? {opacity: bannerBlink}
+      : styles.heroPulseIdle;
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      <View style={[styles.banner, {borderColor: bannerState.borderColor}]}>
-        {sosTriggered && !allDispatched ? (
-          <Animated.View style={[styles.bannerDot, {opacity: bannerBlink}]} />
-        ) : null}
-        <Text style={[styles.bannerText, {color: bannerState.textColor}]}>
-          {bannerState.text}
+      <LinearGradient
+        colors={['#10192B', '#131F35', '#16243D']}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}
+        style={styles.hero}>
+        <View style={styles.heroBadge}>
+          <Animated.View
+            style={[
+              styles.heroPulse,
+              heroPulseColorStyle,
+              heroPulseOpacityStyle,
+            ]}
+          />
+          <Text style={[styles.heroBadgeText, {color: heroTone.accent}]}>
+            {heroTone.badge}
+          </Text>
+        </View>
+
+        <Text style={styles.heroTitle}>Rescue coordination desk</Text>
+        <Text style={styles.heroCopy}>{heroTone.copy}</Text>
+
+        <View style={styles.heroCardsRow}>
+          {responseCards.map(card => (
+            <View key={card.key} style={styles.heroMetricCard}>
+              <Text style={styles.heroMetricLabel}>{card.label}</Text>
+              <Text style={styles.heroMetricValue}>{card.value}</Text>
+            </View>
+          ))}
+        </View>
+      </LinearGradient>
+
+      <View style={styles.gpsCard}>
+        <View style={styles.gpsTopRow}>
+          <Text style={styles.cardTitle}>Incident pin</Text>
+          <View style={styles.gpsBadge}>
+            <Text style={styles.gpsBadgeText}>
+              {location.lat && location.lng ? 'Ready' : 'Preview'}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.coords}>
+          {formatCoordinates(location.lat, location.lng)}
+        </Text>
+        <Text style={styles.address}>
+          {location.address || 'Waiting for a confirmed street address'}
         </Text>
       </View>
 
-      <View style={styles.gpsCard}>
-        <Text style={styles.cardLabel}>📍 GPS LOCK</Text>
-        <View style={styles.gpsRow}>
-          <View style={styles.gpsInfo}>
-            <Text style={styles.coords}>
-              {formatCoordinates(location.lat, location.lng)}
-            </Text>
-            <Text style={styles.address}>
-              {location.address || 'Waiting for reverse geocoding...'}
-            </Text>
-          </View>
-          <View style={styles.gpsBadge}>
-            <Text style={styles.gpsBadgeText}>ACQUIRED ✓</Text>
-          </View>
-        </View>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Dispatch timeline</Text>
+        <Text style={styles.sectionCaption}>
+          Who is being engaged right now
+        </Text>
       </View>
-
-      <Text style={styles.sectionTitle}>Dispatch Log</Text>
       <DispatchLog items={dispatchLog} />
 
-      <Text style={styles.sectionTitle}>Live Map</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Rescue map</Text>
+        <Text style={styles.sectionCaption}>
+          Route lines update as support points get attached
+        </Text>
+      </View>
       <LiveMap dispatchLog={dispatchLog} location={location} />
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Response checklist</Text>
+        <Text style={styles.sectionCaption}>
+          Critical steps for an effective rescue handoff
+        </Text>
+      </View>
+
+      <View style={styles.checklistCard}>
+        {checklist.map(item => (
+          <View key={item.key} style={styles.checklistRow}>
+            <View
+              style={[
+                styles.checklistIcon,
+                item.done
+                  ? styles.checklistIconDone
+                  : styles.checklistIconPending,
+              ]}>
+              <Ionicons
+                color={item.done ? COLORS.GREEN : COLORS.YELLOW}
+                name={item.done ? 'checkmark-circle' : 'time-outline'}
+                size={18}
+              />
+            </View>
+            <Text style={styles.checklistLabel}>{item.label}</Text>
+          </View>
+        ))}
+      </View>
 
       {showDispatchedCard && allDispatched ? (
         <View style={styles.completedCard}>
-          <Text style={styles.completedTitle}>✅ ALL UNITS DISPATCHED</Text>
-          <Text style={styles.completedEta}>Estimated arrival: ~4 minutes</Text>
+          <Text style={styles.completedTitle}>
+            All support lanes are active
+          </Text>
+          <Text style={styles.completedEta}>
+            Best estimated arrival is about 4 minutes.
+          </Text>
         </View>
       ) : null}
 
       <TouchableOpacity
-        activeOpacity={0.9}
+        activeOpacity={0.92}
         onPress={handleReset}
         style={styles.resetButton}>
-        <Text style={styles.resetButtonText}>RESET AND RETURN TO MONITOR</Text>
+        <Ionicons color={COLORS.TEXT} name="arrow-back-outline" size={18} />
+        <Text style={styles.resetButtonText}>Return to Protect</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -157,86 +279,172 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 28,
+    paddingBottom: 120,
   },
-  banner: {
+  hero: {
+    borderRadius: 26,
+    padding: 20,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderColor: COLORS.BORDER,
     marginBottom: 16,
   },
-  bannerDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.PINK,
-    marginRight: 10,
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  bannerText: {
+  heroPulse: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    marginRight: 8,
+  },
+  heroPulseCyan: {
+    backgroundColor: COLORS.CYAN,
+  },
+  heroPulseGreen: {
+    backgroundColor: COLORS.GREEN,
+  },
+  heroPulsePink: {
+    backgroundColor: COLORS.PINK,
+  },
+  heroPulseIdle: {
+    opacity: 1,
+  },
+  heroBadgeText: {
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 1.5,
+  },
+  heroTitle: {
+    marginTop: 22,
+    color: COLORS.TEXT,
+    fontSize: 27,
+    fontWeight: '800',
+  },
+  heroCopy: {
+    marginTop: 10,
+    color: COLORS.TEXT_DIM,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  heroCardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  heroMetricCard: {
+    width: '31%',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    padding: 12,
+  },
+  heroMetricLabel: {
+    color: COLORS.MUTED2,
+    fontSize: 11,
+    marginBottom: 6,
+  },
+  heroMetricValue: {
+    color: COLORS.TEXT,
+    fontSize: 14,
+    fontWeight: '800',
   },
   gpsCard: {
     backgroundColor: COLORS.CARD,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 18,
+    borderRadius: 22,
+    padding: 16,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(0,229,255,0.08)',
+    borderColor: COLORS.BORDER,
   },
-  cardLabel: {
-    color: COLORS.MUTED2,
-    fontSize: 12,
-    letterSpacing: 2,
-    marginBottom: 10,
-  },
-  gpsRow: {
+  gpsTopRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  gpsInfo: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  coords: {
-    color: COLORS.CYAN,
-    fontFamily: 'monospace',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  address: {
-    color: COLORS.MUTED2,
-    fontSize: 12,
-    marginTop: 8,
-    lineHeight: 18,
+  cardTitle: {
+    color: COLORS.TEXT,
+    fontSize: 16,
+    fontWeight: '800',
   },
   gpsBadge: {
-    backgroundColor: 'rgba(0,255,136,0.1)',
-    borderColor: COLORS.GREEN,
-    borderWidth: 1,
     borderRadius: 999,
+    backgroundColor: 'rgba(76, 242, 180, 0.12)',
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   gpsBadgeText: {
     color: COLORS.GREEN,
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  coords: {
+    color: COLORS.CYAN,
+    fontSize: 18,
     fontWeight: '800',
+    marginTop: 16,
+    fontFamily: 'monospace',
+  },
+  address: {
+    color: COLORS.MUTED2,
+    marginTop: 10,
+    lineHeight: 20,
+    fontSize: 13,
+  },
+  sectionHeader: {
+    marginBottom: 12,
   },
   sectionTitle: {
     color: COLORS.TEXT,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
-    marginBottom: 12,
+  },
+  sectionCaption: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  checklistCard: {
+    backgroundColor: COLORS.CARD,
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    marginTop: 2,
+  },
+  checklistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  checklistIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  checklistIconDone: {
+    backgroundColor: 'rgba(76, 242, 180, 0.12)',
+  },
+  checklistIconPending: {
+    backgroundColor: 'rgba(255, 209, 102, 0.12)',
+  },
+  checklistLabel: {
+    color: COLORS.TEXT,
+    fontSize: 14,
+    fontWeight: '700',
   },
   completedCard: {
     marginTop: 16,
-    backgroundColor: 'rgba(0,255,136,0.07)',
+    backgroundColor: 'rgba(76, 242, 180, 0.1)',
     borderColor: COLORS.GREEN,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
   },
   completedTitle: {
@@ -245,23 +453,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   completedEta: {
-    color: COLORS.YELLOW,
-    marginTop: 6,
-    fontWeight: '700',
+    color: COLORS.TEXT,
+    marginTop: 8,
+    fontSize: 13,
   },
   resetButton: {
     marginTop: 18,
-    backgroundColor: COLORS.BG2,
-    borderColor: COLORS.MUTED,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: COLORS.CARD_ALT,
     borderWidth: 1,
-    borderRadius: 16,
-    height: 54,
+    borderColor: COLORS.BORDER,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
   },
   resetButtonText: {
     color: COLORS.TEXT,
     fontWeight: '800',
-    letterSpacing: 1,
+    marginLeft: 8,
   },
 });

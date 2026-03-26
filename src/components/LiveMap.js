@@ -58,8 +58,9 @@ export default function LiveMap({location, dispatchLog = []}) {
     <View style={styles.wrapper}>
       <MapView
         customMapStyle={DARK_MAP_STYLE}
-        initialRegion={region}
+        region={region}
         mapType="standard"
+        showsCompass={false}
         style={styles.map}>
         {Boolean(location?.lat && location?.lng) && (
           <Marker
@@ -109,9 +110,9 @@ const styles = StyleSheet.create({
   wrapper: {
     height: 280,
     overflow: 'hidden',
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(0,229,255,0.12)',
+    borderColor: COLORS.BORDER,
   },
   map: {
     flex: 1,
