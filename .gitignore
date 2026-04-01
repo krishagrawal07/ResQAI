@@ -27,6 +27,9 @@ ios/.xcode.env.local
 build/
 .idea
 .gradle
+.gradle-home/
+.gradle-project-cache/
+.android-home/
 local.properties
 *.iml
 *.hprof
@@ -64,3 +67,10 @@ yarn-error.log
 
 # testing
 /coverage
+
+# Metro logs
+metro.log
+metro.err
+metro.out.log
+metro-session.log
+metro-session.err
