@@ -74,3 +74,8 @@ metro.err
 metro.out.log
 metro-session.log
 metro-session.err
+
+# Demo stack launcher artifacts
+.demo-stack.pids.json
+logs/demo-stack/
+logs/

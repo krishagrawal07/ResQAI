@@ -11,17 +11,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
 import {useAppContext} from '../context/AppContext';
-import DispatchService from '../services/DispatchService';
+import BackendService from '../services/BackendService';
+import CrashDetectionService from '../services/CrashDetectionService';
 import FirebaseService from '../services/FirebaseService';
+import LiveTrackingService from '../services/LiveTrackingService';
 import LocationService from '../services/LocationService';
 import NotificationService from '../services/NotificationService';
 import SMSService from '../services/SMSService';
-import {COLORS, STORAGE_KEYS} from '../utils/constants';
+import {COLORS, FONTS, STORAGE_KEYS} from '../utils/constants';
 
 export default function CrashAlertModal() {
   const navigation = useNavigation();
   const {
-    state: {crashDetected, sensors, userProfile, location},
+    state: {
+      crashDetected,
+      crashMeta,
+      emergencyPlan,
+      location,
+      mode,
+      preferences,
+      sensors,
+      userProfile,
+    },
     dispatch,
   } = useAppContext();
   const [countdown, setCountdown] = useState(10);
@@ -59,6 +70,29 @@ export default function CrashAlertModal() {
     dispatch({type: 'SOS_TRIGGERED'});
 
     let resolvedLocation = location;
+    let backendIncident = null;
+    const fallbackSeverity = CrashDetectionService.previewSeverity(sensors, {
+      speedBeforeKmh: Math.max(sensors.speed + 30, 45),
+    });
+    const includeGuardianMode = Boolean(preferences.guardianMode);
+    const includeMedicalCard = Boolean(preferences.shareMedicalCard);
+    const includeNearbyResponders = Boolean(preferences.notifyNearbyResponders);
+    const incidentEmergencyPlan = includeMedicalCard
+      ? emergencyPlan
+      : {
+          ...emergencyPlan,
+          bloodGroup: 'Hidden by user preference',
+          medicalNotes: 'Hidden by user preference',
+        };
+    const incidentUserProfile = includeMedicalCard
+      ? userProfile
+      : {
+          ...userProfile,
+          bloodGroup: 'Hidden',
+          medicalNotes: 'Hidden by user preference',
+        };
+    const crashSnapshot = crashMeta?.snapshot ?? fallbackSeverity.snapshot;
+    const crashSeverity = crashMeta?.severity ?? fallbackSeverity.severity;
 
     try {
       resolvedLocation = await LocationService.getCurrentLocation();
@@ -75,30 +109,92 @@ export default function CrashAlertModal() {
       };
     }
 
-    const nearbyPolice = await LocationService.getNearbyPlaces(
-      resolvedLocation.lat,
-      resolvedLocation.lng,
-      'police',
-    );
+    const nearbyPolice = includeNearbyResponders
+      ? await LocationService.getNearbyPlaces(
+          resolvedLocation.lat,
+          resolvedLocation.lng,
+          'police',
+        )
+      : [];
+
+    try {
+      backendIncident = await BackendService.createIncident({
+        dispatchPreferences: {
+          guardianMode: includeGuardianMode,
+          notifyNearbyResponders: includeNearbyResponders,
+        },
+        emergencyPlan: incidentEmergencyPlan,
+        location: resolvedLocation,
+        metadata: {
+          appVersion: 'mobile-mvp',
+          detectedAt: crashMeta?.detectedAt || new Date().toISOString(),
+          source: 'mobile-app',
+        },
+        mode,
+        sensorSnapshot: {
+          ...crashSnapshot,
+          severityLabel: crashSeverity.label,
+          severityScore: crashSeverity.score,
+          speed: sensors.speed,
+        },
+        userProfile: incidentUserProfile,
+      });
+      dispatch({type: 'SET_ACTIVE_INCIDENT', payload: backendIncident});
+    } catch (backendError) {
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {startupMode: 'preview'},
+      });
+
+      await SMSService.sendEmergencySMS(
+        incidentUserProfile,
+        resolvedLocation,
+        nearbyPolice,
+        {
+          includeGuardianMode,
+          includeNearbyResponders,
+        },
+      );
+    }
 
     await Promise.allSettled([
-      SMSService.sendEmergencySMS(userProfile, resolvedLocation, nearbyPolice),
       FirebaseService.logCrashEvent(
         sensors,
         resolvedLocation,
         FirebaseService.getCurrentUserId(),
       ),
-      DispatchService.startDispatchSequence({
-        location: resolvedLocation,
-        userProfile,
-        onDispatch: entry => {
-          dispatch({type: 'ADD_DISPATCH_LOG', payload: entry});
-        },
-      }),
     ]);
 
+    if (backendIncident?.id) {
+      await LiveTrackingService.start({
+        incidentId: backendIncident.id,
+        onLocationPushed: pushedLocation => {
+          if (pushedLocation) {
+            dispatch({type: 'SET_LOCATION', payload: pushedLocation});
+            dispatch({
+              type: 'SET_ACTIVE_INCIDENT',
+              payload: {location: pushedLocation},
+            });
+          }
+        },
+      });
+    }
+
     navigation.navigate('Dispatch');
-  }, [clearTimers, dispatch, location, navigation, sensors, userProfile]);
+  }, [
+    clearTimers,
+    crashMeta,
+    dispatch,
+    emergencyPlan,
+    location,
+    mode,
+    navigation,
+    preferences.guardianMode,
+    preferences.notifyNearbyResponders,
+    preferences.shareMedicalCard,
+    sensors,
+    userProfile,
+  ]);
 
   useEffect(() => {
     if (!crashDetected) {
@@ -109,7 +205,14 @@ export default function CrashAlertModal() {
     isHandlingRef.current = false;
     setCountdown(10);
     progressWidth.setValue(280);
-    NotificationService.triggerCrashAlarm();
+    NotificationService.triggerCrashAlarm({
+      silentDispatch: preferences.silentDispatch,
+    });
+    if (preferences.voicePrompts) {
+      NotificationService.announcePrompt(
+        'Possible crash detected. Sending emergency alert in ten seconds.',
+      );
+    }
 
     Animated.sequence([
       Animated.timing(shake, {
@@ -178,13 +281,21 @@ export default function CrashAlertModal() {
 
     countdownRef.current = setInterval(() => {
       setCountdown(previous => {
+        const nextValue = previous - 1;
         if (previous <= 1) {
           clearTimers();
+          if (preferences.voicePrompts) {
+            NotificationService.announcePrompt('Sending emergency alert now.');
+          }
           handleSOS();
           return 0;
         }
 
-        return previous - 1;
+        if (preferences.voicePrompts && [5, 3, 2, 1].includes(nextValue)) {
+          NotificationService.announcePrompt(`Sending SOS in ${nextValue}`);
+        }
+
+        return nextValue;
       });
     }, 1000);
 
@@ -197,6 +308,8 @@ export default function CrashAlertModal() {
     crashDetected,
     handleSOS,
     progressWidth,
+    preferences.silentDispatch,
+    preferences.voicePrompts,
     rippleValues,
     shake,
     warningBlink,
@@ -248,6 +361,12 @@ export default function CrashAlertModal() {
           </View>
 
           <Text style={styles.title}>Possible crash detected</Text>
+          <View style={styles.severityRow}>
+            <Text style={styles.severityLabel}>AI severity</Text>
+            <Text style={styles.severityValue}>
+              {crashMeta?.severity?.label || 'Assessing'}
+            </Text>
+          </View>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>Emergency countdown is active</Text>
           </View>
@@ -329,6 +448,31 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     fontWeight: '800',
     textAlign: 'center',
+    fontFamily: FONTS.heading,
+  },
+  severityRow: {
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: 'rgba(89, 216, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(89, 216, 255, 0.4)',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  severityLabel: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    marginRight: 8,
+    fontFamily: FONTS.body,
+  },
+  severityValue: {
+    color: COLORS.CYAN,
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    fontFamily: FONTS.strong,
   },
   badge: {
     backgroundColor: 'rgba(255, 92, 138, 0.12)',
@@ -343,6 +487,7 @@ const styles = StyleSheet.create({
     color: COLORS.PINK,
     fontSize: 12,
     fontWeight: '800',
+    fontFamily: FONTS.strong,
   },
   copy: {
     marginTop: 14,
@@ -350,13 +495,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 21,
     fontSize: 14,
+    fontFamily: FONTS.body,
   },
   countdown: {
     marginTop: 18,
     color: COLORS.PINK,
     fontSize: 58,
     fontWeight: '900',
-    fontFamily: 'monospace',
+    fontFamily: FONTS.mono,
   },
   progressTrack: {
     width: 280,
@@ -385,6 +531,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     marginLeft: 8,
+    fontFamily: FONTS.strong,
   },
   cancelButton: {
     width: '100%',
@@ -403,5 +550,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     marginLeft: 8,
+    fontFamily: FONTS.strong,
   },
 });

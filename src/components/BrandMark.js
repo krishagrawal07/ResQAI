@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {COLORS} from '../utils/constants';
+import {COLORS, FONTS} from '../utils/constants';
 
 export default function BrandMark({
   size = 56,
@@ -115,10 +115,12 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: 0.4,
+    fontFamily: FONTS.heading,
   },
   subtitle: {
     marginTop: 4,
     color: COLORS.MUTED2,
     fontSize: 12,
+    fontFamily: FONTS.body,
   },
 });

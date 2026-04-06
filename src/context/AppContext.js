@@ -21,8 +21,10 @@ const initialState = {
   isMonitoring: false,
   sensors: initialSensors,
   crashDetected: false,
+  crashMeta: null,
   sosTriggered: false,
   dispatchLog: [],
+  activeIncident: null,
   userProfile: DEFAULT_USER_PROFILE,
   preferences: DEFAULT_PREFERENCES,
   emergencyPlan: DEFAULT_EMERGENCY_PLAN,
@@ -98,6 +100,7 @@ function reducer(state, action) {
       return {
         ...state,
         crashDetected: true,
+        crashMeta: action.payload ?? state.crashMeta,
       };
     case 'SOS_TRIGGERED':
       return {
@@ -111,6 +114,14 @@ function reducer(state, action) {
         ...state,
         dispatchLog: [...state.dispatchLog, action.payload],
       };
+    case 'SET_ACTIVE_INCIDENT':
+      return {
+        ...state,
+        activeIncident: {
+          ...(state.activeIncident ?? {}),
+          ...(action.payload ?? {}),
+        },
+      };
     case 'SET_LOCATION':
       return {
         ...state,
@@ -123,8 +134,10 @@ function reducer(state, action) {
       return {
         ...state,
         crashDetected: false,
+        crashMeta: null,
         sosTriggered: false,
         dispatchLog: [],
+        activeIncident: null,
         sensors: initialSensors,
       };
     case 'SET_USER_PROFILE':

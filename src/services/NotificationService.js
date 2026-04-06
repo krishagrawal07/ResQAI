@@ -1,4 +1,4 @@
-import {Vibration} from 'react-native';
+import {AccessibilityInfo, Vibration} from 'react-native';
 import Sound from 'react-native-sound';
 
 const ALARM_SOUND = require('../assets/sounds/resq_alarm.wav');
@@ -36,19 +36,37 @@ class NotificationService {
     });
   }
 
-  async playAlarm() {
+  async playAlarm({silentDispatch = false} = {}) {
     const alarm = await this.loadAlarm();
-    Vibration.vibrate([0, 400, 250], true);
+    if (silentDispatch) {
+      Vibration.vibrate(150);
+    } else {
+      Vibration.vibrate([0, 400, 250], true);
+    }
 
     if (alarm) {
+      alarm.setVolume(silentDispatch ? 0.45 : 1);
+      alarm.setNumberOfLoops(silentDispatch ? 0 : -1);
       alarm.stop(() => {
         alarm.play();
       });
     }
   }
 
-  async triggerCrashAlarm() {
-    await this.playAlarm();
+  async triggerCrashAlarm(options = {}) {
+    await this.playAlarm(options);
+  }
+
+  announcePrompt(message) {
+    if (!message) {
+      return;
+    }
+
+    try {
+      AccessibilityInfo.announceForAccessibility(message);
+    } catch (error) {
+      console.log('NotificationService.announcePrompt', error);
+    }
   }
 
   stopAlarm() {

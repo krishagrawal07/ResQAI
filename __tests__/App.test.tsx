@@ -42,6 +42,10 @@ jest.mock('../src/services/SensorService', () => ({
   stopMonitoring: jest.fn(),
 }));
 
+jest.mock('../src/services/LiveTrackingService', () => ({
+  stop: jest.fn(),
+}));
+
 import App from '../App';
 
 it('renders correctly', async () => {

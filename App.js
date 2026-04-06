@@ -7,6 +7,7 @@ import {enableScreens} from 'react-native-screens';
 import AppNavigator from './src/navigation/AppNavigator';
 import {AppProvider, useAppContext} from './src/context/AppContext';
 import FirebaseService from './src/services/FirebaseService';
+import LiveTrackingService from './src/services/LiveTrackingService';
 import NotificationService from './src/services/NotificationService';
 import SensorService from './src/services/SensorService';
 import {COLORS, STORAGE_KEYS} from './src/utils/constants';
@@ -116,6 +117,7 @@ function AppBootstrap() {
     return () => {
       isMounted = false;
       SensorService.stopMonitoring();
+      LiveTrackingService.stop();
       NotificationService.release();
     };
   }, [dispatch]);

@@ -1,3 +1,5 @@
+import {Platform} from 'react-native';
+
 export const COLORS = {
   BG: '#050816',
   BG2: '#0B1120',
@@ -5,13 +7,13 @@ export const COLORS = {
   CARD: '#10192B',
   CARD_ALT: '#16243D',
   SURFACE: '#1A2946',
-  CYAN: '#59D8FF',
-  PINK: '#FF5C8A',
+  CYAN: '#8A5BFF',
+  PINK: '#FF4FB0',
   GREEN: '#4CF2B4',
   YELLOW: '#FFD166',
-  ORANGE: '#FF9B71',
-  BLUE: '#7AA2FF',
-  RED: '#FF6B6B',
+  ORANGE: '#FF8C42',
+  BLUE: '#28E7FF',
+  RED: '#FF4973',
   MUTED: '#40547C',
   MUTED2: '#97A6C7',
   TEXT: '#F4F7FB',
@@ -20,32 +22,62 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  heading: 'System',
-  mono: 'monospace',
+  heading: Platform.select({
+    ios: 'AvenirNext-Bold',
+    android: 'sans-serif-condensed',
+    default: 'System',
+  }),
+  body: Platform.select({
+    ios: 'AvenirNext-Regular',
+    android: 'sans-serif',
+    default: 'System',
+  }),
+  strong: Platform.select({
+    ios: 'AvenirNext-DemiBold',
+    android: 'sans-serif-medium',
+    default: 'System',
+  }),
+  mono: Platform.select({
+    ios: 'Menlo',
+    android: 'monospace',
+    default: 'monospace',
+  }),
 };
 
 export const CRASH_THRESHOLDS = {
   biker: {
+    accelG: 3.2,
     accelMagnitude: 20,
+    orientationTiltDeg: 50,
     gyroMagnitude: 150,
+    minSpeedBeforeKmh: 28,
     speedDropPercent: 80,
     audioDb: 100,
   },
   car: {
+    accelG: 3.8,
     accelMagnitude: 25,
+    orientationTiltDeg: 58,
     gyroMagnitude: 120,
+    minSpeedBeforeKmh: 30,
     speedDropPercent: 70,
     audioDb: 105,
   },
   scooter: {
+    accelG: 3.0,
     accelMagnitude: 18,
+    orientationTiltDeg: 50,
     gyroMagnitude: 140,
+    minSpeedBeforeKmh: 24,
     speedDropPercent: 78,
     audioDb: 98,
   },
   family: {
+    accelG: 4.0,
     accelMagnitude: 28,
+    orientationTiltDeg: 58,
     gyroMagnitude: 110,
+    minSpeedBeforeKmh: 32,
     speedDropPercent: 65,
     audioDb: 108,
   },
@@ -117,7 +149,7 @@ export const DEFAULT_USER_PROFILE = {
 
 export const DEFAULT_PREFERENCES = {
   detectionSensitivity: 'balanced',
-  autoArm: true,
+  autoArm: false,
   guardianMode: true,
   voicePrompts: true,
   silentDispatch: false,

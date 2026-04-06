@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -11,13 +12,16 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
+import AuroraBackground from '../components/AuroraBackground';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import BrandMark from '../components/BrandMark';
+import RevealView from '../components/RevealView';
 import {useAppContext} from '../context/AppContext';
 import FirebaseService from '../services/FirebaseService';
 import {
   COLORS,
   DEFAULT_USER_PROFILE,
+  FONTS,
   MODE_META,
   STORAGE_KEYS,
 } from '../utils/constants';
@@ -133,6 +137,8 @@ export default function LoginScreen({navigation}) {
         index: 0,
         routes: [{name: 'MainTabs'}],
       });
+    } catch (error) {
+      Alert.alert('Login failed', 'Unable to complete setup right now.');
     } finally {
       setSubmitting(false);
     }
@@ -169,101 +175,110 @@ export default function LoginScreen({navigation}) {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}>
+      <AuroraBackground variant="auth" />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <LinearGradient
-          colors={['#10192B', '#131F35', '#16243D']}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
-          style={styles.hero}>
-          <BrandMark
-            showWordmark
-            size={62}
-            subtitle="A smarter safety experience from the first screen"
-          />
-          <Text style={styles.heroTitle}>Set up your rescue identity</Text>
-          <Text style={styles.heroCopy}>
-            Add the essentials now. You can refine the rest inside the new
-            Profile and Safety tabs after sign-in.
-          </Text>
-        </LinearGradient>
+        <RevealView delay={50}>
+          <LinearGradient
+            colors={['rgba(21, 34, 57, 0.94)', 'rgba(19, 31, 53, 0.74)']}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
+            style={styles.hero}>
+            <BrandMark
+              showWordmark
+              size={62}
+              subtitle="A smarter safety experience from the first screen"
+            />
+            <Text style={styles.heroTitle}>Set up your rescue identity</Text>
+            <Text style={styles.heroCopy}>
+              Add the essentials now. You can refine the rest inside the new
+              Profile and Safety tabs after sign-in.
+            </Text>
+          </LinearGradient>
+        </RevealView>
 
-        {renderInput({
-          errorKey: 'name',
-          field: 'name',
-          placeholder: 'Full name',
-          value: form.name,
-        })}
-        {renderInput({
-          errorKey: 'phone',
-          field: 'phone',
-          keyboardType: 'phone-pad',
-          placeholder: 'Phone number',
-          value: form.phone,
-        })}
-        {renderInput({
-          errorKey: 'emergencyName',
-          field: 'emergencyName',
-          placeholder: 'Emergency contact name',
-          value: form.emergencyContact?.name ?? '',
-        })}
-        {renderInput({
-          errorKey: 'emergencyPhone',
-          field: 'emergencyPhone',
-          keyboardType: 'phone-pad',
-          placeholder: 'Emergency contact phone',
-          value: form.emergencyContact?.phone ?? '',
-        })}
-
-        <Text style={styles.sectionLabel}>Choose your main vehicle</Text>
-        <View style={styles.modeGrid}>
-          {Object.values(MODE_META).map(option => {
-            const selected = form.vehicleMode === option.value;
-
-            return (
-              <TouchableOpacity
-                activeOpacity={0.92}
-                key={option.value}
-                onPress={() =>
-                  setForm(current => ({
-                    ...current,
-                    vehicleMode: option.value,
-                  }))
-                }
-                style={[
-                  styles.modeCard,
-                  selected ? styles.modeCardActive : null,
-                ]}>
-                <Ionicons
-                  color={selected ? option.accent : COLORS.MUTED2}
-                  name={option.icon}
-                  size={20}
-                />
-                <Text
-                  style={[
-                    styles.modeCardTitle,
-                    selected ? {color: option.accent} : null,
-                  ]}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            );
+        <RevealView delay={120}>
+          {renderInput({
+            errorKey: 'name',
+            field: 'name',
+            placeholder: 'Full name',
+            value: form.name,
           })}
-        </View>
+          {renderInput({
+            errorKey: 'phone',
+            field: 'phone',
+            keyboardType: 'phone-pad',
+            placeholder: 'Phone number',
+            value: form.phone,
+          })}
+          {renderInput({
+            errorKey: 'emergencyName',
+            field: 'emergencyName',
+            placeholder: 'Emergency contact name',
+            value: form.emergencyContact?.name ?? '',
+          })}
+          {renderInput({
+            errorKey: 'emergencyPhone',
+            field: 'emergencyPhone',
+            keyboardType: 'phone-pad',
+            placeholder: 'Emergency contact phone',
+            value: form.emergencyContact?.phone ?? '',
+          })}
+        </RevealView>
 
-        <TouchableOpacity
-          activeOpacity={0.92}
-          disabled={submitting || !isFormValid}
-          onPress={handleSubmit}
-          style={[
-            styles.button,
-            submitting || !isFormValid ? styles.buttonBusy : null,
-          ]}>
-          <Text style={styles.buttonText}>
-            {submitting ? 'Saving profile...' : 'Enter the app'}
-          </Text>
-        </TouchableOpacity>
+        <RevealView delay={190}>
+          <Text style={styles.sectionLabel}>Choose your main vehicle</Text>
+          <View style={styles.modeGrid}>
+            {Object.values(MODE_META).map(option => {
+              const selected = form.vehicleMode === option.value;
+
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.92}
+                  key={option.value}
+                  onPress={() =>
+                    setForm(current => ({
+                      ...current,
+                      vehicleMode: option.value,
+                    }))
+                  }
+                  style={[
+                    styles.modeCard,
+                    selected ? styles.modeCardActive : null,
+                  ]}>
+                  <Ionicons
+                    color={selected ? option.accent : COLORS.MUTED2}
+                    name={option.icon}
+                    size={20}
+                  />
+                  <Text
+                    style={[
+                      styles.modeCardTitle,
+                      selected ? {color: option.accent} : null,
+                    ]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </RevealView>
+
+        <RevealView delay={260}>
+          <TouchableOpacity
+            activeOpacity={0.92}
+            disabled={submitting || !isFormValid}
+            onPress={handleSubmit}
+            style={[
+              styles.button,
+              submitting || !isFormValid ? styles.buttonBusy : null,
+            ]}>
+            <Text style={styles.buttonText}>
+              {submitting ? 'Saving profile...' : 'Enter the app'}
+            </Text>
+          </TouchableOpacity>
+        </RevealView>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -283,7 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     padding: 20,
     borderWidth: 1,
-    borderColor: COLORS.BORDER,
+    borderColor: 'rgba(137, 159, 208, 0.24)',
     marginBottom: 18,
   },
   heroTitle: {
@@ -291,18 +306,20 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     marginTop: 22,
+    fontFamily: FONTS.heading,
   },
   heroCopy: {
     color: COLORS.TEXT_DIM,
     marginTop: 10,
     lineHeight: 22,
     fontSize: 14,
+    fontFamily: FONTS.body,
   },
   fieldBlock: {
     marginBottom: 12,
   },
   input: {
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.86)',
     borderWidth: 1,
     borderColor: COLORS.BORDER,
     borderRadius: 16,
@@ -323,6 +340,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 12,
     fontSize: 12,
+    fontFamily: FONTS.body,
   },
   modeGrid: {
     flexDirection: 'row',
@@ -332,7 +350,7 @@ const styles = StyleSheet.create({
   },
   modeCard: {
     width: '48%',
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.88)',
     borderRadius: 18,
     borderWidth: 1,
     borderColor: COLORS.BORDER,
@@ -342,12 +360,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modeCardActive: {
-    backgroundColor: COLORS.CARD_ALT,
+    backgroundColor: 'rgba(22, 36, 61, 0.96)',
+    borderColor: 'rgba(89, 216, 255, 0.44)',
   },
   modeCardTitle: {
     color: COLORS.TEXT,
     fontWeight: '800',
     marginLeft: 10,
+    fontFamily: FONTS.strong,
   },
   button: {
     backgroundColor: COLORS.CYAN,
@@ -363,5 +383,6 @@ const styles = StyleSheet.create({
     color: COLORS.BG,
     fontWeight: '800',
     letterSpacing: 0.4,
+    fontFamily: FONTS.strong,
   },
 });

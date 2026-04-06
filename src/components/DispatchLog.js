@@ -1,10 +1,11 @@
 import React, {useEffect, useRef} from 'react';
 import {Animated, StyleSheet, Text, View} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {COLORS} from '../utils/constants';
+import {COLORS, FONTS} from '../utils/constants';
 
 const TYPE_ICONS = {
   contact: 'call-outline',
+  desk: 'radio-outline',
   landmark: 'location-outline',
   medical: 'medkit-outline',
   police: 'shield-outline',
@@ -38,6 +39,7 @@ function DispatchLogItem({item}) {
           transform: [{translateY}],
         },
       ]}>
+      <View style={[styles.accentRail, {backgroundColor: item.color}]} />
       <View
         style={[
           styles.icon,
@@ -70,10 +72,9 @@ export default function DispatchLog({items = []}) {
             size={18}
             style={styles.emptyIcon}
           />
-          <Text style={styles.emptyTitle}>No live dispatches yet</Text>
+          <Text style={styles.emptyTitle}>Awaiting Emergency Response</Text>
           <Text style={styles.empty}>
-            Trigger a rescue drill or a real SOS and the response lanes will
-            appear here.
+            When an incident is detected, this timeline will show real-time dispatch updates from emergency services and contacts.
           </Text>
         </View>
       ) : (
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   emptyCard: {
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.9)',
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
@@ -103,14 +104,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     marginBottom: 6,
+    fontFamily: FONTS.heading,
   },
   empty: {
     color: COLORS.MUTED2,
     fontSize: 13,
     lineHeight: 20,
+    fontFamily: FONTS.body,
   },
   item: {
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.9)',
     borderRadius: 20,
     padding: 14,
     borderWidth: 1,
@@ -118,6 +121,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  accentRail: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    opacity: 0.7,
   },
   icon: {
     width: 42,
@@ -135,16 +147,19 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: FONTS.strong,
   },
   subtitle: {
     color: COLORS.MUTED2,
     fontSize: 12,
     marginTop: 4,
     lineHeight: 18,
+    fontFamily: FONTS.body,
   },
   eta: {
     marginTop: 8,
     fontSize: 11,
     fontWeight: '800',
+    fontFamily: FONTS.strong,
   },
 });

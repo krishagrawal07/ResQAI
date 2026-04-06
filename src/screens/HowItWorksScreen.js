@@ -2,8 +2,10 @@ import React, {useMemo} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AuroraBackground from '../components/AuroraBackground';
+import RevealView from '../components/RevealView';
 import {useAppContext} from '../context/AppContext';
-import {COLORS, MODE_META} from '../utils/constants';
+import {COLORS, FONTS, MODE_META} from '../utils/constants';
 import {formatSensorSource} from '../utils/helpers';
 
 const PIPELINE = [
@@ -103,88 +105,108 @@ export default function HowItWorksScreen() {
   ];
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      <LinearGradient
-        colors={['#10192B', '#131F35', '#16243D']}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
-        style={styles.hero}>
-        <View style={styles.heroBadge}>
-          <Ionicons color={COLORS.CYAN} name="analytics-outline" size={18} />
-          <Text style={styles.heroBadgeText}>Product insights</Text>
-        </View>
-        <Text style={styles.heroTitle}>Why this feels like a real app now</Text>
-        <Text style={styles.heroCopy}>
-          The experience is no longer just a sensor mockup. It now carries a
-          proper safety flow, profile system, response desk, configurable rescue
-          settings, and a preview mode that prevents dead screens.
-        </Text>
-      </LinearGradient>
+    <View style={styles.container}>
+      <AuroraBackground variant="insights" />
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Response pipeline</Text>
-        <Text style={styles.sectionCaption}>
-          The three layers of the rescue journey
-        </Text>
-      </View>
-
-      {PIPELINE.map(item => (
-        <View key={item.key} style={styles.pipelineCard}>
-          <View
-            style={[
-              styles.pipelineIconWrap,
-              {backgroundColor: `${item.color}18`},
-            ]}>
-            <Ionicons color={item.color} name={item.icon} size={22} />
-          </View>
-          <View style={styles.pipelineCopy}>
-            <Text style={styles.pipelineTitle}>{item.title}</Text>
-            <Text style={styles.pipelineSubtitle}>{item.subtitle}</Text>
-          </View>
-        </View>
-      ))}
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Live insights</Text>
-        <Text style={styles.sectionCaption}>
-          Signals from your current app state
-        </Text>
-      </View>
-
-      <View style={styles.insightGrid}>
-        {liveInsights.map(item => (
-          <View key={item.key} style={styles.insightCard}>
-            <Text style={styles.insightLabel}>{item.label}</Text>
-            <Text style={styles.insightValue}>{item.value}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Operational timeline</Text>
-        <Text style={styles.sectionCaption}>
-          A quick read on what the system is doing right now
-        </Text>
-      </View>
-
-      <View style={styles.timelineCard}>
-        {timeline.map(item => (
-          <View key={item.key} style={styles.timelineRow}>
-            <View
-              style={[
-                styles.timelineIcon,
-                {backgroundColor: `${item.accent}18`},
-              ]}>
-              <Ionicons color={item.accent} name={item.icon} size={18} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        style={styles.scrollBody}>
+        <RevealView delay={40}>
+          <LinearGradient
+            colors={['rgba(16, 25, 43, 0.95)', 'rgba(22, 36, 61, 0.8)']}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
+            style={styles.hero}>
+            <View style={styles.heroBadge}>
+              <Ionicons
+                color={COLORS.CYAN}
+                name="analytics-outline"
+                size={18}
+              />
+              <Text style={styles.heroBadgeText}>Product insights</Text>
             </View>
-            <View style={styles.timelineCopy}>
-              <Text style={styles.timelineTitle}>{item.title}</Text>
-              <Text style={styles.timelineSubtitle}>{item.subtitle}</Text>
-            </View>
+            <Text style={styles.heroTitle}>
+              Why this feels like a real app now
+            </Text>
+            <Text style={styles.heroCopy}>
+              The experience is no longer just a sensor mockup. It now carries a
+              proper safety flow, profile system, response desk, configurable
+              rescue settings, and a preview mode that prevents dead screens.
+            </Text>
+          </LinearGradient>
+        </RevealView>
+
+        <RevealView delay={100}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Response pipeline</Text>
+            <Text style={styles.sectionCaption}>
+              The three layers of the rescue journey
+            </Text>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+
+          {PIPELINE.map(item => (
+            <View key={item.key} style={styles.pipelineCard}>
+              <View
+                style={[
+                  styles.pipelineIconWrap,
+                  {backgroundColor: `${item.color}18`},
+                ]}>
+                <Ionicons color={item.color} name={item.icon} size={22} />
+              </View>
+              <View style={styles.pipelineCopy}>
+                <Text style={styles.pipelineTitle}>{item.title}</Text>
+                <Text style={styles.pipelineSubtitle}>{item.subtitle}</Text>
+              </View>
+            </View>
+          ))}
+        </RevealView>
+
+        <RevealView delay={170}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Live insights</Text>
+            <Text style={styles.sectionCaption}>
+              Signals from your current app state
+            </Text>
+          </View>
+
+          <View style={styles.insightGrid}>
+            {liveInsights.map(item => (
+              <View key={item.key} style={styles.insightCard}>
+                <Text style={styles.insightLabel}>{item.label}</Text>
+                <Text style={styles.insightValue}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+        </RevealView>
+
+        <RevealView delay={240}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Operational timeline</Text>
+            <Text style={styles.sectionCaption}>
+              A quick read on what the system is doing right now
+            </Text>
+          </View>
+
+          <View style={styles.timelineCard}>
+            {timeline.map(item => (
+              <View key={item.key} style={styles.timelineRow}>
+                <View
+                  style={[
+                    styles.timelineIcon,
+                    {backgroundColor: `${item.accent}18`},
+                  ]}>
+                  <Ionicons color={item.accent} name={item.icon} size={18} />
+                </View>
+                <View style={styles.timelineCopy}>
+                  <Text style={styles.timelineTitle}>{item.title}</Text>
+                  <Text style={styles.timelineSubtitle}>{item.subtitle}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </RevealView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -195,13 +217,16 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 120,
+    paddingBottom: 136,
+  },
+  scrollBody: {
+    flex: 1,
   },
   hero: {
     borderRadius: 26,
     padding: 20,
     borderWidth: 1,
-    borderColor: COLORS.BORDER,
+    borderColor: 'rgba(137, 159, 208, 0.24)',
     marginBottom: 18,
   },
   heroBadge: {
@@ -217,18 +242,21 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     fontWeight: '700',
     marginLeft: 8,
+    fontFamily: FONTS.strong,
   },
   heroTitle: {
     marginTop: 22,
     color: COLORS.TEXT,
     fontSize: 27,
     fontWeight: '800',
+    fontFamily: FONTS.heading,
   },
   heroCopy: {
     marginTop: 10,
     color: COLORS.TEXT_DIM,
     fontSize: 14,
     lineHeight: 22,
+    fontFamily: FONTS.body,
   },
   sectionHeader: {
     marginBottom: 12,
@@ -237,14 +265,16 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     fontSize: 17,
     fontWeight: '800',
+    fontFamily: FONTS.heading,
   },
   sectionCaption: {
     color: COLORS.MUTED2,
     fontSize: 12,
     marginTop: 4,
+    fontFamily: FONTS.body,
   },
   pipelineCard: {
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.9)',
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
@@ -268,12 +298,14 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     fontSize: 15,
     fontWeight: '800',
+    fontFamily: FONTS.strong,
   },
   pipelineSubtitle: {
     color: COLORS.MUTED2,
     fontSize: 13,
     lineHeight: 20,
     marginTop: 6,
+    fontFamily: FONTS.body,
   },
   insightGrid: {
     flexDirection: 'row',
@@ -283,7 +315,7 @@ const styles = StyleSheet.create({
   },
   insightCard: {
     width: '48%',
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.9)',
     borderRadius: 20,
     padding: 14,
     borderWidth: 1,
@@ -293,15 +325,17 @@ const styles = StyleSheet.create({
   insightLabel: {
     color: COLORS.MUTED2,
     fontSize: 12,
+    fontFamily: FONTS.body,
   },
   insightValue: {
     color: COLORS.TEXT,
     fontSize: 15,
     fontWeight: '800',
     marginTop: 8,
+    fontFamily: FONTS.strong,
   },
   timelineCard: {
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.9)',
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
@@ -327,11 +361,13 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: FONTS.strong,
   },
   timelineSubtitle: {
     color: COLORS.MUTED2,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 6,
+    fontFamily: FONTS.body,
   },
 });

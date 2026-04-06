@@ -24,20 +24,31 @@ class SMSService {
     );
   }
 
-  async sendEmergencySMS(userProfile, location, nearbyPolice = []) {
+  async sendEmergencySMS(
+    userProfile,
+    location,
+    nearbyPolice = [],
+    options = {},
+  ) {
+    const includeGuardianMode = options.includeGuardianMode !== false;
+    const includeNearbyResponders = options.includeNearbyResponders !== false;
     const message = [
       'EMERGENCY ALERT - ResQ AI',
       `${userProfile.name} may have been in a crash.`,
       '',
       `Location: ${location.address}`,
       `Maps: https://maps.google.com/?q=${location.lat},${location.lng}`,
-      `Nearest Police: ${nearbyPolice[0]?.name ?? 'Dispatching nearest unit'}`,
+      `Nearest Police: ${
+        includeNearbyResponders
+          ? nearbyPolice[0]?.name ?? 'Dispatching nearest unit'
+          : 'Nearby responder ping disabled'
+      }`,
       'Please respond immediately.',
     ].join('\n');
 
     const recipients = [
-      userProfile?.emergencyContact?.phone,
-      LOCAL_POLICE_SMS_NUMBER,
+      includeGuardianMode ? userProfile?.emergencyContact?.phone : null,
+      includeNearbyResponders ? LOCAL_POLICE_SMS_NUMBER : null,
     ].filter(Boolean);
 
     if (

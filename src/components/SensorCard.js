@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Animated, StyleSheet, Text, View} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {COLORS} from '../utils/constants';
+import {COLORS, FONTS} from '../utils/constants';
 
 export default function SensorCard({
   label,
@@ -13,15 +13,30 @@ export default function SensorCard({
   hint = '',
 }) {
   const progress = useRef(new Animated.Value(0)).current;
+  const flash = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
   useEffect(() => {
-    Animated.timing(progress, {
-      toValue: percentage,
-      duration: 320,
-      useNativeDriver: false,
-    }).start();
-  }, [percentage, progress]);
+    Animated.parallel([
+      Animated.timing(progress, {
+        toValue: percentage,
+        duration: 320,
+        useNativeDriver: false,
+      }),
+      Animated.sequence([
+        Animated.timing(flash, {
+          toValue: 1,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flash, {
+          toValue: 0,
+          duration: 260,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [flash, percentage, progress]);
 
   const animatedWidth = progress.interpolate({
     inputRange: [0, 100],
@@ -30,6 +45,20 @@ export default function SensorCard({
 
   return (
     <View style={styles.card}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.flashOverlay,
+          {
+            opacity: flash.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.2],
+            }),
+            backgroundColor: color,
+          },
+        ]}
+      />
+
       <View style={styles.topRow}>
         <View style={[styles.iconWrap, {backgroundColor: `${color}18`}]}>
           <Ionicons color={color} name={icon} size={18} />
@@ -58,12 +87,16 @@ export default function SensorCard({
 const styles = StyleSheet.create({
   card: {
     width: '48%',
-    backgroundColor: COLORS.CARD,
+    backgroundColor: 'rgba(16, 25, 43, 0.9)',
     borderRadius: 20,
     padding: 14,
     borderWidth: 1,
     borderColor: COLORS.BORDER,
     marginBottom: 12,
+    overflow: 'hidden',
+  },
+  flashOverlay: {
+    ...StyleSheet.absoluteFillObject,
   },
   topRow: {
     flexDirection: 'row',
@@ -82,6 +115,7 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: FONTS.strong,
   },
   valueRow: {
     flexDirection: 'row',
@@ -91,7 +125,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 24,
     fontWeight: '800',
-    fontFamily: 'monospace',
+    fontFamily: FONTS.mono,
   },
   unit: {
     marginLeft: 6,
