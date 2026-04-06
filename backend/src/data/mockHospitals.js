@@ -1,0 +1,58 @@
+export const MOCK_HOSPITALS = [
+  {
+    id: 'hosp-blr-1',
+    name: 'City Trauma Center',
+    lat: 12.9716,
+    lng: 77.5946,
+    phone: '+918000000001',
+  },
+  {
+    id: 'hosp-blr-2',
+    name: 'Metro Emergency Hospital',
+    lat: 12.9629,
+    lng: 77.6387,
+    phone: '+918000000002',
+  },
+  {
+    id: 'hosp-del-1',
+    name: 'Capital LifeCare',
+    lat: 28.6139,
+    lng: 77.209,
+    phone: '+918000000003',
+  },
+  {
+    id: 'hosp-del-2',
+    name: 'North Delhi Emergency Wing',
+    lat: 28.7041,
+    lng: 77.1025,
+    phone: '+918000000004',
+  },
+  {
+    id: 'hosp-mum-1',
+    name: 'Coastal Trauma Support',
+    lat: 19.076,
+    lng: 72.8777,
+    phone: '+918000000005',
+  },
+  {
+    id: 'hosp-mum-2',
+    name: 'Westline Emergency Hospital',
+    lat: 19.2183,
+    lng: 72.9781,
+    phone: '+918000000006',
+  },
+  {
+    id: 'hosp-hyd-1',
+    name: 'Hyderabad Rescue Medics',
+    lat: 17.385,
+    lng: 78.4867,
+    phone: '+918000000007',
+  },
+  {
+    id: 'hosp-che-1',
+    name: 'Chennai Road Safety Hospital',
+    lat: 13.0827,
+    lng: 80.2707,
+    phone: '+918000000008',
+  },
+];

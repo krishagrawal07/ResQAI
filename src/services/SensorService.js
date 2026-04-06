@@ -331,7 +331,7 @@ class SensorService {
     this.currentData = {
       ax: threshold.accelMagnitude * 0.95,
       ay: threshold.accelMagnitude * 0.88,
-      az: threshold.accelMagnitude * 1.1,
+      az: threshold.accelMagnitude * 0.45,
       gx: threshold.gyroMagnitude * 0.92,
       gy: threshold.gyroMagnitude * 0.87,
       gz: threshold.gyroMagnitude * 1.03,

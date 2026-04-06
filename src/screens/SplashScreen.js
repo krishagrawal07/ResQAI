@@ -1,12 +1,14 @@
 import React, {useEffect, useRef} from 'react';
-import {Animated, Easing, StyleSheet, Text} from 'react-native';
+import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
+import AuroraBackground from '../components/AuroraBackground';
 import BrandMark from '../components/BrandMark';
-import {COLORS, STORAGE_KEYS} from '../utils/constants';
+import {COLORS, FONTS, STORAGE_KEYS} from '../utils/constants';
 
 export default function SplashScreen({navigation}) {
   const pulse = useRef(new Animated.Value(0)).current;
+  const haloRotation = useRef(new Animated.Value(0)).current;
   const translate = useRef(new Animated.Value(18)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -28,7 +30,17 @@ export default function SplashScreen({navigation}) {
       ]),
     );
 
+    const haloLoop = Animated.loop(
+      Animated.timing(haloRotation, {
+        toValue: 1,
+        duration: 14000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+
     pulseLoop.start();
+    haloLoop.start();
 
     Animated.parallel([
       Animated.timing(opacity, {
@@ -63,14 +75,35 @@ export default function SplashScreen({navigation}) {
 
     return () => {
       pulseLoop.stop();
+      haloLoop.stop();
       clearTimeout(timer);
     };
-  }, [navigation, opacity, pulse, translate]);
+  }, [haloRotation, navigation, opacity, pulse, translate]);
+
+  const haloSpin = haloRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
     <LinearGradient
       colors={['#050816', '#0B1120', '#111B32']}
       style={styles.container}>
+      <AuroraBackground variant="auth" />
+
+      <Animated.View
+        style={[
+          styles.haloRing,
+          {
+            transform: [{rotate: haloSpin}],
+            opacity: pulse.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.22, 0.46],
+            }),
+          },
+        ]}
+      />
+
       <Animated.View
         style={[
           styles.backdropOrb,
@@ -107,6 +140,7 @@ export default function SplashScreen({navigation}) {
           Live safety monitoring, smarter rescue drills, and emergency response
           tools in one place.
         </Text>
+        <View style={styles.shineBar} />
       </Animated.View>
     </LinearGradient>
   );
@@ -126,6 +160,16 @@ const styles = StyleSheet.create({
     borderRadius: 130,
     backgroundColor: 'rgba(89, 216, 255, 0.16)',
   },
+  haloRing: {
+    position: 'absolute',
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    borderWidth: 1,
+    borderColor: 'rgba(89, 216, 255, 0.24)',
+    borderTopColor: 'rgba(255, 209, 102, 0.45)',
+    borderRightColor: 'rgba(255, 92, 138, 0.36)',
+  },
   content: {
     alignItems: 'center',
   },
@@ -135,6 +179,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     textAlign: 'center',
+    fontFamily: FONTS.heading,
   },
   caption: {
     marginTop: 14,
@@ -143,5 +188,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontSize: 14,
     maxWidth: 300,
+    fontFamily: FONTS.body,
+  },
+  shineBar: {
+    marginTop: 22,
+    width: 110,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(89, 216, 255, 0.58)',
   },
 });

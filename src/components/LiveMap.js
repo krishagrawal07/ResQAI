@@ -1,7 +1,12 @@
 import React, {useEffect, useMemo, useRef} from 'react';
-import {Animated, StyleSheet, View} from 'react-native';
+import {Animated, StyleSheet, Text, View} from 'react-native';
 import MapView, {Marker, Polyline} from 'react-native-maps';
-import {COLORS, DARK_MAP_STYLE, DEFAULT_REGION} from '../utils/constants';
+import {
+  COLORS,
+  DARK_MAP_STYLE,
+  DEFAULT_REGION,
+  FONTS,
+} from '../utils/constants';
 
 export default function LiveMap({location, dispatchLog = []}) {
   const pulse = useRef(new Animated.Value(0)).current;
@@ -102,6 +107,19 @@ export default function LiveMap({location, dispatchLog = []}) {
           </React.Fragment>
         ))}
       </MapView>
+
+      <View style={styles.mapOverlay}>
+        <Text style={styles.mapOverlayTitle}>
+          {dispatchMarkers.length > 0 ? 'Live routing' : 'Map preview'}
+        </Text>
+        <Text style={styles.mapOverlayText}>
+          {dispatchMarkers.length > 0
+            ? `${dispatchMarkers.length} support lane${
+                dispatchMarkers.length > 1 ? 's' : ''
+              } active`
+            : 'Awaiting dispatch lanes'}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -113,6 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     borderColor: COLORS.BORDER,
+    backgroundColor: 'rgba(11, 17, 32, 0.8)',
   },
   map: {
     flex: 1,
@@ -151,5 +170,28 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  mapOverlay: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(5, 8, 22, 0.62)',
+    borderWidth: 1,
+    borderColor: 'rgba(137, 159, 208, 0.22)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  mapOverlayTitle: {
+    color: COLORS.TEXT,
+    fontSize: 11,
+    fontWeight: '800',
+    fontFamily: FONTS.strong,
+  },
+  mapOverlayText: {
+    color: COLORS.MUTED2,
+    fontSize: 10,
+    marginTop: 2,
+    fontFamily: FONTS.body,
   },
 });
