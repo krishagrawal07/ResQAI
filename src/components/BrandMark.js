@@ -37,7 +37,7 @@ export default function BrandMark({
           ]}
         />
         <LinearGradient
-          colors={[COLORS.CYAN, COLORS.BLUE, COLORS.PINK]}
+          colors={[COLORS.PRIMARY, COLORS.ACCENT, COLORS.SUCCESS]}
           end={{x: 1, y: 1}}
           start={{x: 0, y: 0}}
           style={[
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   glow: {
     position: 'absolute',
-    backgroundColor: 'rgba(89, 216, 255, 0.18)',
+    backgroundColor: 'rgba(255, 59, 48, 0.18)',
   },
   ring: {
     position: 'absolute',
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   orb: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: COLORS.CYAN,
+    shadowColor: COLORS.PRIMARY,
     shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.28,
     shadowRadius: 16,

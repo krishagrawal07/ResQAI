@@ -5,39 +5,39 @@ import {COLORS} from '../utils/constants';
 
 const PALETTES = {
   default: {
-    one: 'rgba(89, 216, 255, 0.28)',
-    two: 'rgba(122, 162, 255, 0.2)',
-    three: 'rgba(255, 209, 102, 0.14)',
+    one: 'rgba(255, 59, 48, 0.24)',
+    two: 'rgba(10, 132, 255, 0.18)',
+    three: 'rgba(52, 199, 89, 0.1)',
   },
   monitor: {
-    one: 'rgba(89, 216, 255, 0.32)',
-    two: 'rgba(76, 242, 180, 0.2)',
-    three: 'rgba(122, 162, 255, 0.14)',
+    one: 'rgba(255, 59, 48, 0.28)',
+    two: 'rgba(10, 132, 255, 0.22)',
+    three: 'rgba(52, 199, 89, 0.14)',
   },
   dispatch: {
-    one: 'rgba(255, 92, 138, 0.26)',
-    two: 'rgba(122, 162, 255, 0.2)',
-    three: 'rgba(255, 155, 113, 0.16)',
+    one: 'rgba(255, 59, 48, 0.32)',
+    two: 'rgba(10, 132, 255, 0.18)',
+    three: 'rgba(255, 159, 10, 0.14)',
   },
   safety: {
-    one: 'rgba(255, 209, 102, 0.25)',
-    two: 'rgba(89, 216, 255, 0.2)',
-    three: 'rgba(76, 242, 180, 0.16)',
+    one: 'rgba(255, 214, 10, 0.18)',
+    two: 'rgba(10, 132, 255, 0.18)',
+    three: 'rgba(52, 199, 89, 0.14)',
   },
   insights: {
-    one: 'rgba(122, 162, 255, 0.28)',
-    two: 'rgba(89, 216, 255, 0.2)',
-    three: 'rgba(255, 92, 138, 0.16)',
+    one: 'rgba(10, 132, 255, 0.24)',
+    two: 'rgba(255, 59, 48, 0.14)',
+    three: 'rgba(52, 199, 89, 0.12)',
   },
   profile: {
-    one: 'rgba(76, 242, 180, 0.22)',
-    two: 'rgba(89, 216, 255, 0.2)',
-    three: 'rgba(255, 155, 113, 0.16)',
+    one: 'rgba(52, 199, 89, 0.18)',
+    two: 'rgba(10, 132, 255, 0.2)',
+    three: 'rgba(255, 59, 48, 0.12)',
   },
   auth: {
-    one: 'rgba(89, 216, 255, 0.28)',
-    two: 'rgba(255, 92, 138, 0.18)',
-    three: 'rgba(255, 209, 102, 0.14)',
+    one: 'rgba(10, 132, 255, 0.24)',
+    two: 'rgba(255, 59, 48, 0.18)',
+    three: 'rgba(255, 214, 10, 0.1)',
   },
 };
 
@@ -185,7 +185,7 @@ export default function AuroraBackground({variant = 'default'}) {
       </Animated.View>
 
       <LinearGradient
-        colors={['rgba(5, 8, 22, 0.55)', 'rgba(5, 8, 22, 0.12)', COLORS.BG]}
+        colors={['rgba(13, 13, 13, 0.5)', 'rgba(13, 13, 13, 0.16)', COLORS.BG]}
         locations={[0, 0.45, 1]}
         style={styles.vignette}
       />

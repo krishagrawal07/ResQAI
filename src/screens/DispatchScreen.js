@@ -1,7 +1,6 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Alert,
-  Animated,
   Linking,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,11 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AuroraBackground from '../components/AuroraBackground';
 import DispatchLog from '../components/DispatchLog';
+import {
+  AnimatedSuccessCheckmark,
+  FadeInWhen,
+  ReanimatedStatusDot,
+} from '../components/EmergencyAnimations';
 import LiveMap from '../components/LiveMap';
 import RevealView from '../components/RevealView';
 import {useAppContext} from '../context/AppContext';
@@ -35,7 +39,6 @@ export default function DispatchScreen({navigation}) {
     },
     dispatch,
   } = useAppContext();
-  const bannerBlink = useRef(new Animated.Value(1)).current;
   const [showDispatchedCard, setShowDispatchedCard] = useState(false);
   const expectedDispatchCount = useMemo(() => {
     let total = 0;
@@ -48,29 +51,12 @@ export default function DispatchScreen({navigation}) {
     return Math.max(total, 1);
   }, [preferences.guardianMode, preferences.notifyNearbyResponders]);
   const allDispatched = dispatchLog.length >= expectedDispatchCount;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bannerBlink, {
-          toValue: 0.25,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bannerBlink, {
-          toValue: 1,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    if (sosTriggered && !allDispatched) {
-      loop.start();
-    }
-
-    return () => loop.stop();
-  }, [allDispatched, bannerBlink, sosTriggered]);
+  const handleMapLocationUpdate = useCallback(
+    nextLocation => {
+      dispatch({type: 'SET_LOCATION', payload: nextLocation});
+    },
+    [dispatch],
+  );
 
   useEffect(() => {
     let completionTimer;
@@ -276,17 +262,6 @@ export default function DispatchScreen({navigation}) {
     preferences.notifyNearbyResponders,
   ]);
 
-  const heroPulseColorStyle =
-    heroTone.accent === COLORS.GREEN
-      ? styles.heroPulseGreen
-      : heroTone.accent === COLORS.PINK
-      ? styles.heroPulsePink
-      : styles.heroPulseCyan;
-  const heroPulseOpacityStyle =
-    sosTriggered && !allDispatched
-      ? {opacity: bannerBlink}
-      : styles.heroPulseIdle;
-
   return (
     <View style={styles.container}>
       <AuroraBackground variant="dispatch" />
@@ -296,25 +271,41 @@ export default function DispatchScreen({navigation}) {
         style={styles.scrollBody}>
         <RevealView delay={40}>
           <LinearGradient
-            colors={['rgba(16, 25, 43, 0.95)', 'rgba(22, 36, 61, 0.82)']}
+            colors={['rgba(28, 28, 30, 0.95)', 'rgba(13, 13, 13, 0.86)']}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={styles.hero}>
             <View style={styles.heroBadge}>
-              <Animated.View
-                style={[
-                  styles.heroPulse,
-                  heroPulseColorStyle,
-                  heroPulseOpacityStyle,
-                ]}
+              <ReanimatedStatusDot
+                active={sosTriggered && !allDispatched}
+                activeColor={heroTone.accent}
+                idleColor={heroTone.accent}
               />
               <Text style={[styles.heroBadgeText, {color: heroTone.accent}]}>
                 {heroTone.badge}
               </Text>
             </View>
 
-            <Text style={styles.heroTitle}>Rescue coordination desk</Text>
-            <Text style={styles.heroCopy}>{heroTone.copy}</Text>
+            {sosTriggered ? (
+              <View style={styles.sentHero}>
+                <AnimatedSuccessCheckmark active={sosTriggered} />
+                <FadeInWhen active={sosTriggered} delay={240}>
+                  <Text style={styles.sentTitle}>Help is on the way</Text>
+                </FadeInWhen>
+                <FadeInWhen active={sosTriggered} delay={380}>
+                  <Text style={styles.sentCopy}>
+                    Your emergency alert is live. ResQ AI is sharing your crash
+                    context, location, and rescue preferences with the response
+                    network.
+                  </Text>
+                </FadeInWhen>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.heroTitle}>Rescue coordination desk</Text>
+                <Text style={styles.heroCopy}>{heroTone.copy}</Text>
+              </>
+            )}
 
             <View style={styles.heroCardsRow}>
               {responseCards.map(card => (
@@ -428,12 +419,23 @@ export default function DispatchScreen({navigation}) {
 
         <RevealView delay={220}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Rescue map</Text>
+            <Text style={styles.sectionTitle}>
+              {sosTriggered ? 'Map preview' : 'Rescue map'}
+            </Text>
             <Text style={styles.sectionCaption}>
-              Route lines update as support points get attached
+              {sosTriggered
+                ? 'Your live location pin stays visible while help routes in'
+                : 'Route lines update as support points get attached'}
             </Text>
           </View>
-          <LiveMap dispatchLog={dispatchLog} location={location} />
+          <LiveMap
+            dispatchLog={dispatchLog}
+            location={location}
+            onUserLocationChange={handleMapLocationUpdate}
+            title={
+              sosTriggered ? 'Emergency map preview' : 'Responder GPS handoff'
+            }
+          />
         </RevealView>
 
         <RevealView delay={280}>
@@ -510,8 +512,13 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(137, 159, 208, 0.24)',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
     marginBottom: 16,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: {width: 0, height: 24},
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 12,
   },
   heroBadge: {
     flexDirection: 'row',
@@ -521,24 +528,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.07)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-  },
-  heroPulse: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    marginRight: 8,
-  },
-  heroPulseCyan: {
-    backgroundColor: COLORS.CYAN,
-  },
-  heroPulseGreen: {
-    backgroundColor: COLORS.GREEN,
-  },
-  heroPulsePink: {
-    backgroundColor: COLORS.PINK,
-  },
-  heroPulseIdle: {
-    opacity: 1,
   },
   heroBadgeText: {
     fontSize: 12,
@@ -557,6 +546,26 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_DIM,
     fontSize: 14,
     lineHeight: 22,
+    fontFamily: FONTS.body,
+  },
+  sentHero: {
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  sentTitle: {
+    color: COLORS.TEXT,
+    fontSize: 30,
+    fontWeight: '900',
+    textAlign: 'center',
+    letterSpacing: -0.4,
+    fontFamily: FONTS.heading,
+  },
+  sentCopy: {
+    color: COLORS.TEXT_DIM,
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: 10,
     fontFamily: FONTS.body,
   },
   heroCardsRow: {

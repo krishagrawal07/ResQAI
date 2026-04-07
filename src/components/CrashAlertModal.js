@@ -1,15 +1,21 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {
-  Animated,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {Modal, StyleSheet, Text, Vibration, View} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import AnimatedReanimated, {
+  Easing,
+  cancelAnimation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
+import {CountdownProgressRing} from './EmergencyAnimations';
+import {EmergencyGlowBorder, RipplePressable} from './MicroInteractions';
 import {useAppContext} from '../context/AppContext';
 import BackendService from '../services/BackendService';
 import CrashDetectionService from '../services/CrashDetectionService';
@@ -19,6 +25,19 @@ import LocationService from '../services/LocationService';
 import NotificationService from '../services/NotificationService';
 import SMSService from '../services/SMSService';
 import {COLORS, FONTS, STORAGE_KEYS} from '../utils/constants';
+
+function CrashRipple({index, pulse}) {
+  const ringStyle = useAnimatedStyle(() => {
+    const phase = (pulse.value + index * 0.22) % 1;
+
+    return {
+      opacity: interpolate(phase, [0, 1], [0.78, 0]),
+      transform: [{scale: interpolate(phase, [0, 1], [1, 1.55])}],
+    };
+  });
+
+  return <AnimatedReanimated.View style={[styles.ripple, ringStyle]} />;
+}
 
 export default function CrashAlertModal() {
   const navigation = useNavigation();
@@ -36,15 +55,12 @@ export default function CrashAlertModal() {
     dispatch,
   } = useAppContext();
   const [countdown, setCountdown] = useState(10);
-  const shake = useRef(new Animated.Value(0)).current;
-  const warningBlink = useRef(new Animated.Value(1)).current;
-  const progressWidth = useRef(new Animated.Value(280)).current;
+  const shake = useSharedValue(0);
+  const flash = useSharedValue(0);
+  const warningPulse = useSharedValue(0);
+  const ripplePulse = useSharedValue(0);
   const countdownRef = useRef(null);
   const isHandlingRef = useRef(false);
-  const rippleValues = useMemo(
-    () => [new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)],
-    [],
-  );
 
   const clearTimers = useCallback(() => {
     if (countdownRef.current) {
@@ -56,6 +72,7 @@ export default function CrashAlertModal() {
   const handleCancel = useCallback(() => {
     clearTimers();
     NotificationService.stopAlarm();
+    Vibration.cancel();
     dispatch({type: 'RESET_CRASH'});
   }, [clearTimers, dispatch]);
 
@@ -67,6 +84,7 @@ export default function CrashAlertModal() {
     isHandlingRef.current = true;
     clearTimers();
     NotificationService.stopAlarm();
+    Vibration.cancel();
     dispatch({type: 'SOS_TRIGGERED'});
 
     let resolvedLocation = location;
@@ -204,7 +222,8 @@ export default function CrashAlertModal() {
 
     isHandlingRef.current = false;
     setCountdown(10);
-    progressWidth.setValue(280);
+    NotificationService.hapticAlert();
+    NotificationService.playSoftAlertTone({volume: 0.16});
     NotificationService.triggerCrashAlarm({
       silentDispatch: preferences.silentDispatch,
     });
@@ -214,70 +233,53 @@ export default function CrashAlertModal() {
       );
     }
 
-    Animated.sequence([
-      Animated.timing(shake, {
-        toValue: -10,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {
-        toValue: 10,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {
-        toValue: -6,
-        duration: 70,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {
-        toValue: 6,
-        duration: 70,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {toValue: 0, duration: 70, useNativeDriver: true}),
-    ]).start();
-
-    const blinkLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(warningBlink, {
-          toValue: 0.25,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(warningBlink, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]),
+    shake.value = withSequence(
+      withTiming(-10, {duration: 70, easing: Easing.out(Easing.cubic)}),
+      withTiming(10, {duration: 70, easing: Easing.out(Easing.cubic)}),
+      withTiming(-7, {duration: 64, easing: Easing.out(Easing.cubic)}),
+      withTiming(7, {duration: 64, easing: Easing.out(Easing.cubic)}),
+      withTiming(-3, {duration: 56, easing: Easing.out(Easing.cubic)}),
+      withTiming(0, {duration: 120, easing: Easing.out(Easing.cubic)}),
     );
-
-    blinkLoop.start();
-
-    rippleValues.forEach((value, index) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 220),
-          Animated.timing(value, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(value, {
-            toValue: 0,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    });
-
-    Animated.timing(progressWidth, {
-      toValue: 0,
-      duration: 10000,
-      useNativeDriver: false,
-    }).start();
+    flash.value = withRepeat(
+      withSequence(
+        withTiming(1, {
+          duration: 540,
+          easing: Easing.inOut(Easing.cubic),
+        }),
+        withTiming(0.18, {
+          duration: 540,
+          easing: Easing.inOut(Easing.cubic),
+        }),
+      ),
+      -1,
+      false,
+    );
+    warningPulse.value = withRepeat(
+      withSequence(
+        withTiming(1, {
+          duration: 760,
+          easing: Easing.inOut(Easing.cubic),
+        }),
+        withTiming(0, {
+          duration: 760,
+          easing: Easing.inOut(Easing.cubic),
+        }),
+      ),
+      -1,
+      false,
+    );
+    ripplePulse.value = withRepeat(
+      withSequence(
+        withTiming(1, {
+          duration: 1350,
+          easing: Easing.out(Easing.cubic),
+        }),
+        withTiming(0, {duration: 0}),
+      ),
+      -1,
+      false,
+    );
 
     countdownRef.current = setInterval(() => {
       setCountdown(previous => {
@@ -300,104 +302,138 @@ export default function CrashAlertModal() {
     }, 1000);
 
     return () => {
-      blinkLoop.stop();
+      cancelAnimation(shake);
+      cancelAnimation(flash);
+      cancelAnimation(warningPulse);
+      cancelAnimation(ripplePulse);
+      Vibration.cancel();
       clearTimers();
     };
   }, [
     clearTimers,
     crashDetected,
+    flash,
     handleSOS,
-    progressWidth,
     preferences.silentDispatch,
     preferences.voicePrompts,
-    rippleValues,
+    ripplePulse,
     shake,
-    warningBlink,
+    warningPulse,
   ]);
+
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{translateX: shake.value}],
+  }));
+  const redFlashStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(flash.value, [0, 1], [0.2, 0.68]),
+  }));
+  const alertPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(warningPulse.value, [0, 1], [0.45, 1]),
+  }));
+  const warningCoreStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(warningPulse.value, [0, 1], [0.72, 1]),
+    transform: [
+      {scale: interpolate(warningPulse.value, [0, 1], [0.96, 1.035])},
+    ],
+  }));
 
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       transparent
       visible={crashDetected}
       onRequestClose={handleCancel}>
       <View style={styles.container}>
-        <Animated.View
-          style={[styles.content, {transform: [{translateX: shake}]}]}>
-          <View style={styles.rippleContainer}>
-            {rippleValues.map((value, index) => {
-              const ringStyle = {
-                opacity: value.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.82, 0],
-                }),
-                transform: [
-                  {
-                    scale: value.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 1.45],
-                    }),
-                  },
-                ],
-              };
+        <AnimatedReanimated.View
+          pointerEvents="none"
+          style={[styles.redFlashLayer, redFlashStyle]}
+        />
+        <View pointerEvents="none" style={styles.scanGrid} />
+        <AnimatedReanimated.View style={[styles.content, shakeStyle]}>
+          <EmergencyGlowBorder active style={styles.panelGlow}>
+            <LinearGradient
+              colors={['rgba(255, 59, 48, 0.22)', 'rgba(13, 13, 13, 0.94)']}
+              end={{x: 1, y: 1}}
+              start={{x: 0, y: 0}}
+              style={styles.panel}>
+              <View style={styles.alertHeader}>
+                <View style={styles.alertPill}>
+                  <AnimatedReanimated.View
+                    style={[styles.alertDot, alertPulseStyle]}
+                  />
+                  <Text style={styles.alertPillText}>Crash Detection</Text>
+                </View>
+                <Text style={styles.alertHint}>Auto-SOS in progress</Text>
+              </View>
 
-              return (
-                <Animated.View
-                  key={`ring-${index}`}
-                  style={[styles.ripple, ringStyle]}
-                />
-              );
-            })}
+              <View style={styles.rippleContainer}>
+                {[0, 1, 2].map(index => (
+                  <CrashRipple
+                    index={index}
+                    key={`ring-${index}`}
+                    pulse={ripplePulse}
+                  />
+                ))}
 
-            <Animated.View style={{opacity: warningBlink}}>
-              <View style={styles.warningCore}>
-                <Ionicons
-                  color={COLORS.PINK}
-                  name="warning-outline"
-                  size={42}
+                <AnimatedReanimated.View style={warningCoreStyle}>
+                  <LinearGradient
+                    colors={[COLORS.PRIMARY, '#7A0B07']}
+                    style={styles.warningCore}>
+                    <Ionicons
+                      color="#FFFFFF"
+                      name="warning-outline"
+                      size={48}
+                    />
+                  </LinearGradient>
+                </AnimatedReanimated.View>
+              </View>
+
+              <Text style={styles.title}>Possible crash detected</Text>
+              <Text style={styles.copy}>
+                If you are safe, cancel now. If there is no response, ResQ AI
+                will send your location, medical card, and emergency contacts.
+              </Text>
+
+              <View style={styles.timerCard}>
+                <CountdownProgressRing
+                  active={crashDetected}
+                  countdown={countdown}
                 />
               </View>
-            </Animated.View>
-          </View>
 
-          <Text style={styles.title}>Possible crash detected</Text>
-          <View style={styles.severityRow}>
-            <Text style={styles.severityLabel}>AI severity</Text>
-            <Text style={styles.severityValue}>
-              {crashMeta?.severity?.label || 'Assessing'}
-            </Text>
-          </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Emergency countdown is active</Text>
-          </View>
-          <Text style={styles.copy}>
-            If you are safe, cancel now. If there is no response, ResQ AI will
-            continue the SOS flow automatically.
-          </Text>
-          <Text style={styles.countdown}>{countdown}</Text>
+              <View style={styles.severityRow}>
+                <Text style={styles.severityLabel}>AI severity</Text>
+                <Text style={styles.severityValue}>
+                  {crashMeta?.severity?.label || 'Assessing'}
+                </Text>
+              </View>
 
-          <View style={styles.progressTrack}>
-            <Animated.View
-              style={[styles.progressFill, {width: progressWidth}]}
-            />
-          </View>
+              <RipplePressable
+                contentStyle={styles.buttonPressContent}
+                haptic="medium"
+                onPress={handleCancel}
+                rippleColor="rgba(13,13,13,0.2)"
+                style={styles.cancelButton}>
+                <Ionicons color={COLORS.BG} name="close-circle" size={22} />
+                <Text style={styles.cancelButtonText}>Cancel Alert</Text>
+              </RipplePressable>
 
-          <TouchableOpacity
-            activeOpacity={0.92}
-            onPress={handleSOS}
-            style={styles.sosButton}>
-            <Ionicons color="#FFFFFF" name="paper-plane-outline" size={18} />
-            <Text style={styles.sosButtonText}>Send SOS now</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.92}
-            onPress={handleCancel}
-            style={styles.cancelButton}>
-            <Ionicons color={COLORS.TEXT} name="close-outline" size={18} />
-            <Text style={styles.cancelButtonText}>I am safe, cancel alert</Text>
-          </TouchableOpacity>
-        </Animated.View>
+              <RipplePressable
+                contentStyle={styles.buttonPressContent}
+                haptic="heavy"
+                onPress={handleSOS}
+                rippleColor="rgba(255, 59, 48, 0.28)"
+                style={styles.sosButton}>
+                <Ionicons
+                  color="#FFFFFF"
+                  name="paper-plane-outline"
+                  size={18}
+                />
+                <Text style={styles.sosButtonText}>Send SOS now</Text>
+              </RipplePressable>
+            </LinearGradient>
+          </EmergencyGlowBorder>
+        </AnimatedReanimated.View>
       </View>
     </Modal>
   );
@@ -406,19 +442,77 @@ export default function CrashAlertModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(5, 8, 22, 0.96)',
+    backgroundColor: 'rgba(13, 13, 13, 0.96)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 28,
   },
+  redFlashLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.PRIMARY,
+  },
+  scanGrid: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.04)',
+  },
   content: {
     width: '100%',
-    backgroundColor: '#120B18',
-    borderRadius: 28,
-    padding: 24,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: {width: 0, height: 28},
+    shadowOpacity: 0.42,
+    shadowRadius: 40,
+    elevation: 18,
+  },
+  panelGlow: {
+    width: '100%',
+  },
+  panel: {
+    width: '100%',
+    borderRadius: 34,
+    padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 92, 138, 0.26)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  alertHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  alertPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+  },
+  alertDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.PRIMARY,
+    marginRight: 8,
+  },
+  alertPillText: {
+    color: COLORS.TEXT,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    fontFamily: FONTS.strong,
+  },
+  alertHint: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: FONTS.strong,
   },
   rippleContainer: {
     width: 170,
@@ -433,31 +527,32 @@ const styles = StyleSheet.create({
     height: 138,
     borderRadius: 69,
     borderWidth: 2,
-    borderColor: COLORS.PINK,
+    borderColor: COLORS.PRIMARY,
   },
   warningCore: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    backgroundColor: 'rgba(255, 92, 138, 0.1)',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     color: COLORS.TEXT,
-    fontWeight: '800',
+    fontWeight: '900',
     textAlign: 'center',
     fontFamily: FONTS.heading,
   },
   severityRow: {
-    marginTop: 12,
+    marginTop: 14,
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: 'rgba(89, 216, 255, 0.12)',
+    backgroundColor: 'rgba(10, 132, 255, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(89, 216, 255, 0.4)',
+    borderColor: 'rgba(10, 132, 255, 0.36)',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -468,25 +563,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
   },
   severityValue: {
-    color: COLORS.CYAN,
+    color: COLORS.ACCENT,
     fontSize: 12,
     fontWeight: '800',
     textTransform: 'uppercase',
-    fontFamily: FONTS.strong,
-  },
-  badge: {
-    backgroundColor: 'rgba(255, 92, 138, 0.12)',
-    borderColor: COLORS.PINK,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    marginTop: 14,
-  },
-  badgeText: {
-    color: COLORS.PINK,
-    fontSize: 12,
-    fontWeight: '800',
     fontFamily: FONTS.strong,
   },
   copy: {
@@ -497,34 +577,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FONTS.body,
   },
-  countdown: {
-    marginTop: 18,
-    color: COLORS.PINK,
-    fontSize: 58,
-    fontWeight: '900',
-    fontFamily: FONTS.mono,
-  },
-  progressTrack: {
-    width: 280,
-    height: 7,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginTop: 12,
-    marginBottom: 24,
-  },
-  progressFill: {
-    height: 7,
-    backgroundColor: COLORS.PINK,
-  },
-  sosButton: {
-    backgroundColor: COLORS.PINK,
-    borderRadius: 18,
+  timerCard: {
     width: '100%',
-    height: 54,
+    alignItems: 'center',
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    padding: 18,
+    marginTop: 20,
+  },
+  buttonPressContent: {
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+  },
+  sosButton: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 18,
+    width: '100%',
+    height: 52,
+    marginTop: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   sosButtonText: {
     color: '#FFFFFF',
@@ -535,20 +614,23 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     width: '100%',
-    height: 50,
-    marginTop: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    height: 66,
+    marginTop: 22,
+    borderRadius: 24,
+    backgroundColor: COLORS.TEXT,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    shadowColor: COLORS.TEXT,
+    shadowOffset: {width: 0, height: 12},
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 8,
   },
   cancelButtonText: {
-    color: COLORS.TEXT,
-    fontSize: 13,
-    fontWeight: '700',
+    color: COLORS.BG,
+    fontSize: 17,
+    fontWeight: '900',
     marginLeft: 8,
     fontFamily: FONTS.strong,
   },
