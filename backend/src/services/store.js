@@ -23,7 +23,7 @@ class IncidentStore {
 
   ensureDataDir() {
     if (!fs.existsSync(this.dataDir)) {
-      fs.mkdirSync(this.dataDir, { recursive: true });
+      fs.mkdirSync(this.dataDir, {recursive: true});
     }
   }
 
@@ -32,7 +32,9 @@ class IncidentStore {
       if (fs.existsSync(this.incidentsFile)) {
         const data = fs.readFileSync(this.incidentsFile, 'utf8');
         const incidentsArray = JSON.parse(data);
-        this.incidents = new Map(incidentsArray.map(incident => [incident.id, incident]));
+        this.incidents = new Map(
+          incidentsArray.map(incident => [incident.id, incident]),
+        );
       }
     } catch (error) {
       console.error('Failed to load incidents:', error);
@@ -42,7 +44,10 @@ class IncidentStore {
   saveIncidents() {
     try {
       const incidentsArray = Array.from(this.incidents.values());
-      fs.writeFileSync(this.incidentsFile, JSON.stringify(incidentsArray, null, 2));
+      fs.writeFileSync(
+        this.incidentsFile,
+        JSON.stringify(incidentsArray, null, 2),
+      );
     } catch (error) {
       console.error('Failed to save incidents:', error);
     }
@@ -61,7 +66,10 @@ class IncidentStore {
 
   saveFallbackQueue() {
     try {
-      fs.writeFileSync(this.fallbackFile, JSON.stringify(this.fallbackQueue, null, 2));
+      fs.writeFileSync(
+        this.fallbackFile,
+        JSON.stringify(this.fallbackQueue, null, 2),
+      );
     } catch (error) {
       console.error('Failed to save fallback queue:', error);
     }

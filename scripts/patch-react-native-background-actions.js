@@ -44,18 +44,18 @@ if (
 let updated = original;
 
 updated = updated.replace(
-  "            notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(linkingURI));",
-  "            notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(linkingURI));\n            notificationIntent.setPackage(context.getPackageName());",
+  '            notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(linkingURI));',
+  '            notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(linkingURI));\n            notificationIntent.setPackage(context.getPackageName());',
 );
 
 updated = updated.replace(
-  "            notificationIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);",
-  "            notificationIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());\n            if (notificationIntent == null) {\n                notificationIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);\n                notificationIntent.setPackage(context.getPackageName());\n            }",
+  '            notificationIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);',
+  '            notificationIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());\n            if (notificationIntent == null) {\n                notificationIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);\n                notificationIntent.setPackage(context.getPackageName());\n            }',
 );
 
 updated = updated.replace(
-  "        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {\n            contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_MUTABLE);\n        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {",
-  "        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {\n            contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);\n        } else {",
+  '        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {\n            contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_MUTABLE);\n        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {',
+  '        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {\n            contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);\n        } else {',
 );
 
 if (updated === original) {
@@ -66,4 +66,6 @@ if (updated === original) {
 }
 
 fs.writeFileSync(targetFile, updated, 'utf8');
-console.log('[postinstall] Patched react-native-background-actions for Android 14.');
+console.log(
+  '[postinstall] Patched react-native-background-actions for Android 14.',
+);

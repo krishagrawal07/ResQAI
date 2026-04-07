@@ -1,0 +1,9 @@
+android/
+ios/
+ResQAITemp/
+backend/node_modules/
+backend/data/
+dashboard/dist/
+dashboard/node_modules/
+logs/
+node_modules/

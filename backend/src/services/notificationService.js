@@ -130,7 +130,9 @@ class NotificationService {
 
   async processFallbackQueue() {
     const queue = store.listFallbackQueue();
-    if (queue.length === 0) return;
+    if (queue.length === 0) {
+      return;
+    }
 
     const toRetry = queue.filter(item => {
       const ageMinutes = (Date.now() - new Date(item.queuedAt)) / (1000 * 60);
@@ -141,7 +143,9 @@ class NotificationService {
       try {
         // Find the incident
         const incident = store.getIncident(item.incidentId);
-        if (!incident) continue;
+        if (!incident) {
+          continue;
+        }
 
         const body = buildMessage({
           incident,
@@ -149,7 +153,7 @@ class NotificationService {
         });
 
         const result = await this.sendSms(item.phone, body);
-        
+
         // If successful, remove from queue
         // For simplicity, we'll recreate the queue without this item
         store.fallbackQueue = store.fallbackQueue.filter(q => q !== item);
