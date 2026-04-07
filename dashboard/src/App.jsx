@@ -1,3 +1,4 @@
+/* eslint-disable no-alert, react-native/no-inline-styles */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import Map, {Marker} from 'react-map-gl';
 import {io} from 'socket.io-client';
@@ -29,7 +30,10 @@ const SORT_OPTIONS = [
 const MAP_STYLE_OPTIONS = [
   {label: 'Night Ops', value: 'mapbox://styles/mapbox/dark-v11'},
   {label: 'Street View', value: 'mapbox://styles/mapbox/streets-v12'},
-  {label: 'Satelite Hybrid', value: 'mapbox://styles/mapbox/satellite-streets-v12'},
+  {
+    label: 'Satellite Hybrid',
+    value: 'mapbox://styles/mapbox/satellite-streets-v12',
+  },
 ];
 
 const MAP_VIEW_STYLE = {height: 420, width: '100%'};
@@ -249,7 +253,8 @@ function DashboardPage() {
     if (sortMode === 'severity') {
       return [...filtered].sort((left, right) => {
         const rankDelta =
-          rankSeverity(right.severity?.label) - rankSeverity(left.severity?.label);
+          rankSeverity(right.severity?.label) -
+          rankSeverity(left.severity?.label);
         if (rankDelta !== 0) {
           return rankDelta;
         }
@@ -301,7 +306,9 @@ function DashboardPage() {
     const filtered =
       severityFilter === 'All'
         ? heatmapPoints
-        : heatmapPoints.filter(point => (point.severity || 'Low') === severityFilter);
+        : heatmapPoints.filter(
+            point => (point.severity || 'Low') === severityFilter,
+          );
     return filtered.slice(0, 30);
   }, [heatmapPoints, severityFilter]);
 
@@ -321,7 +328,9 @@ function DashboardPage() {
   const handleLiveToggle = useCallback(async () => {
     const nextLivePaused = !livePaused;
     setLivePaused(nextLivePaused);
-    setToastMessage(nextLivePaused ? 'Live updates paused.' : 'Live updates resumed.');
+    setToastMessage(
+      nextLivePaused ? 'Live updates paused.' : 'Live updates resumed.',
+    );
 
     if (!nextLivePaused) {
       await loadDashboardData(false);
@@ -409,7 +418,9 @@ function DashboardPage() {
         </div>
       ) : null}
 
-      <section className="control-grid animate-rise" style={{'--delay': '0.12s'}}>
+      <section
+        className="control-grid animate-rise"
+        style={{'--delay': '0.12s'}}>
         <label className="control search-control">
           <span>Search Incident</span>
           <input
@@ -466,7 +477,9 @@ function DashboardPage() {
         ) : null}
       </section>
 
-      <section className="metrics-grid animate-rise" style={{'--delay': '0.15s'}}>
+      <section
+        className="metrics-grid animate-rise"
+        style={{'--delay': '0.15s'}}>
         {metricCards.map(item => (
           <article key={item.label} className="metric-card">
             <span>{item.label}</span>
@@ -518,8 +531,8 @@ function DashboardPage() {
             <div className="map-fallback">
               <h3>Mapbox token missing</h3>
               <p>
-                Add <code>VITE_MAPBOX_TOKEN</code> in <code>dashboard/.env</code>{' '}
-                to enable the live map.
+                Add <code>VITE_MAPBOX_TOKEN</code> in{' '}
+                <code>dashboard/.env</code> to enable the live map.
               </p>
               <ul className="fallback-list">
                 {visibleIncidents.map(item => (
@@ -528,7 +541,9 @@ function DashboardPage() {
                       className="fallback-item"
                       onClick={() => setSelectedIncidentId(item.id)}
                       type="button">
-                      <strong>{item.userProfile?.name || 'Unknown user'}</strong>
+                      <strong>
+                        {item.userProfile?.name || 'Unknown user'}
+                      </strong>
                       <span>
                         {Number(item.location?.lat || 0).toFixed(4)},{' '}
                         {Number(item.location?.lng || 0).toFixed(4)}
@@ -549,7 +564,9 @@ function DashboardPage() {
           <div className="incident-list">
             {visibleIncidents.length === 0 ? (
               <div className="empty-state">
-                No active incidents match your current filters.
+                {loading
+                  ? 'Loading active incidents...'
+                  : 'No active incidents match your current filters.'}
               </div>
             ) : (
               visibleIncidents.map((incident, index) => (
@@ -562,7 +579,9 @@ function DashboardPage() {
                   style={{'--item-delay': `${Math.min(index * 40, 440)}ms`}}
                   type="button">
                   <div className="incident-head">
-                    <strong>{incident.userProfile?.name || 'Unknown User'}</strong>
+                    <strong>
+                      {incident.userProfile?.name || 'Unknown User'}
+                    </strong>
                     <span
                       className="badge"
                       style={{
@@ -574,7 +593,9 @@ function DashboardPage() {
                     </span>
                   </div>
                   <p>{incident.location?.address || incident.locationLabel}</p>
-                  <small>{formatDate(incident.updatedAt || incident.createdAt)}</small>
+                  <small>
+                    {formatDate(incident.updatedAt || incident.createdAt)}
+                  </small>
                 </button>
               ))
             )}
@@ -597,11 +618,15 @@ function DashboardPage() {
               </div>
               <div className="detail-row">
                 <span>User</span>
-                <strong>{selectedIncident.userProfile?.name || 'Unknown'}</strong>
+                <strong>
+                  {selectedIncident.userProfile?.name || 'Unknown'}
+                </strong>
               </div>
               <div className="detail-row">
                 <span>Status</span>
-                <strong className="status-chip">{selectedIncident.status || 'active'}</strong>
+                <strong className="status-chip">
+                  {selectedIncident.status || 'active'}
+                </strong>
               </div>
               <div className="detail-row">
                 <span>Blood Group</span>
@@ -627,7 +652,9 @@ function DashboardPage() {
                   <button
                     className="inline-button"
                     disabled={!selectedIncident.trackingUrl}
-                    onClick={() => handleCopyTrackingLink(selectedIncident.trackingUrl)}
+                    onClick={() =>
+                      handleCopyTrackingLink(selectedIncident.trackingUrl)
+                    }
                     type="button">
                     Copy
                   </button>
@@ -693,7 +720,8 @@ function DashboardPage() {
                     <strong>{point.severity}</strong>
                     <span>Intensity {point.intensity}</span>
                     <small>
-                      {Number(point.lat).toFixed(3)}, {Number(point.lng).toFixed(3)}
+                      {Number(point.lat).toFixed(3)},{' '}
+                      {Number(point.lng).toFixed(3)}
                     </small>
                   </article>
                 );
@@ -744,8 +772,8 @@ function TrackingPage({shareToken}) {
         <div>
           <h1>ResQ AI Live Tracking</h1>
           <p>
-            Share this page with family and responders for live incident
-            updates and location checkpoints.
+            Share this page with family and responders for live incident updates
+            and location checkpoints.
           </p>
         </div>
         <div className="status-pill ok">Auto-sync every 5s</div>
@@ -795,7 +823,9 @@ function TrackingPage({shareToken}) {
           </div>
         </section>
       ) : (
-        <div className="panel empty-state animate-rise" style={{'--delay': '0.14s'}}>
+        <div
+          className="panel empty-state animate-rise"
+          style={{'--delay': '0.14s'}}>
           Loading tracking details...
         </div>
       )}

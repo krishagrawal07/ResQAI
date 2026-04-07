@@ -431,11 +431,10 @@ export default function MonitorScreen({navigation}) {
               </View>
             </View>
 
-            <Text style={styles.heroTitle}>
-              AI-Powered Crash Protection
-            </Text>
+            <Text style={styles.heroTitle}>AI-Powered Crash Protection</Text>
             <Text style={styles.heroCopy}>
-              Advanced sensor fusion detects impacts in real-time. Configured for {formatModeLabel(state.mode)} mode with adaptive thresholds.
+              Advanced sensor fusion detects impacts in real-time. Configured
+              for {formatModeLabel(state.mode)} mode with adaptive thresholds.
             </Text>
 
             <View style={styles.versionBadge}>

@@ -74,7 +74,8 @@ export default function DispatchLog({items = []}) {
           />
           <Text style={styles.emptyTitle}>Awaiting Emergency Response</Text>
           <Text style={styles.empty}>
-            When an incident is detected, this timeline will show real-time dispatch updates from emergency services and contacts.
+            When an incident is detected, this timeline will show real-time
+            dispatch updates from emergency services and contacts.
           </Text>
         </View>
       ) : (

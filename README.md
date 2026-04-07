@@ -205,6 +205,12 @@ npm run demo:start
 npm run demo:check
 ```
 
+Seed a dashboard incident without the mobile app:
+
+```bash
+npm run demo:incident
+```
+
 When done:
 ```bash
 npm run demo:stop
@@ -226,6 +232,8 @@ npm run demo:stop
    - severity badge
    - heatmap update
 8. Open tracking link (`/track/:token`) to demonstrate public live location sharing
+
+Backup path if the mobile build is slow: run `npm run demo:incident` after `npm run demo:start`, then show the seeded incident appearing in the dashboard and open its tracking link.
 
 ## Presentation Script (Under 5 minutes)
 
