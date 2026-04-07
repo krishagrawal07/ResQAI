@@ -1,12 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef} from 'react';
-import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import AnimatedReanimated, {
@@ -20,11 +13,18 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AuroraBackground from '../components/AuroraBackground';
 import BrandMark from '../components/BrandMark';
 import CrashAlertModal from '../components/CrashAlertModal';
+import {
+  PulsingSafetyIndicator,
+  ReanimatedStatusDot,
+} from '../components/EmergencyAnimations';
+import LiveMap from '../components/LiveMap';
+import {RipplePressable} from '../components/MicroInteractions';
 import RevealView from '../components/RevealView';
 import SensorCard from '../components/SensorCard';
 import {useAppContext} from '../context/AppContext';
 import CrashDetectionService from '../services/CrashDetectionService';
 import LocationService from '../services/LocationService';
+import NotificationService from '../services/NotificationService';
 import SensorService from '../services/SensorService';
 import {
   COLORS,
@@ -69,7 +69,6 @@ const QUICK_ACTIONS = [
 
 export default function MonitorScreen({navigation}) {
   const {state, dispatch} = useAppContext();
-  const blink = useRef(new Animated.Value(1)).current;
   const pulse = useSharedValue(0);
   const autoArmHandledRef = useRef(false);
 
@@ -81,6 +80,7 @@ export default function MonitorScreen({navigation}) {
   );
 
   const triggerSimulatedCrash = useCallback(() => {
+    NotificationService.playSoftAlertTone({volume: 0.22});
     const simulated = SensorService.simulateCrash(state.mode);
     const severityPreview = CrashDetectionService.previewSeverity(simulated, {
       speedBeforeKmh: Math.max(48, state.sensors.speed || 0),
@@ -117,31 +117,6 @@ export default function MonitorScreen({navigation}) {
     },
     [dispatch],
   );
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(blink, {
-          toValue: 0.2,
-          duration: 850,
-          useNativeDriver: true,
-        }),
-        Animated.timing(blink, {
-          toValue: 1,
-          duration: 850,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    if (state.isMonitoring) {
-      loop.start();
-    } else {
-      blink.setValue(1);
-    }
-
-    return () => loop.stop();
-  }, [blink, state.isMonitoring]);
 
   useEffect(() => {
     pulse.value = withRepeat(withTiming(1, {duration: 1600}), -1, true);
@@ -211,6 +186,8 @@ export default function MonitorScreen({navigation}) {
   }, [dispatch]);
 
   const handleMonitoringToggle = useCallback(async () => {
+    NotificationService.playSoftAlertTone({volume: 0.12});
+
     if (state.isMonitoring) {
       await stopMonitoring();
       return;
@@ -407,39 +384,34 @@ export default function MonitorScreen({navigation}) {
         showsVerticalScrollIndicator={false}>
         <RevealView delay={40}>
           <LinearGradient
-            colors={['rgba(17, 27, 50, 0.95)', 'rgba(12, 22, 42, 0.9)']}
+            colors={['rgba(28, 28, 30, 0.94)', 'rgba(13, 13, 13, 0.88)']}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={styles.heroCard}>
             <View style={styles.heroTopRow}>
               <BrandMark showWordmark size={58} />
               <View style={styles.heroStatusBadge}>
-                <Animated.View
-                  style={[
-                    styles.statusDot,
-                    {
-                      backgroundColor: state.isMonitoring
-                        ? COLORS.GREEN
-                        : COLORS.YELLOW,
-                      opacity: blink,
-                    },
-                  ]}
+                <ReanimatedStatusDot
+                  active={state.isMonitoring}
+                  activeColor={COLORS.SUCCESS}
+                  idleColor={COLORS.YELLOW}
                 />
                 <Text style={styles.heroStatusText}>
-                  {state.isMonitoring ? 'Protection active' : 'Standby mode'}
+                  {state.isMonitoring ? 'Protection active' : 'Ready to arm'}
                 </Text>
               </View>
             </View>
 
-            <Text style={styles.heroTitle}>AI-Powered Crash Protection</Text>
+            <PulsingSafetyIndicator isMonitoring={state.isMonitoring} />
+
+            <Text style={styles.heroTitle}>
+              Emergency intelligence, always on
+            </Text>
             <Text style={styles.heroCopy}>
-              Advanced sensor fusion detects impacts in real-time. Configured
+              ResQ AI blends Apple Health clarity, Tesla-style telemetry, and
+              Uber Safety urgency into one premium rescue cockpit. Configured
               for {formatModeLabel(state.mode)} mode with adaptive thresholds.
             </Text>
-
-            <View style={styles.versionBadge}>
-              <Text style={styles.versionText}>v2.0 OVERPOWERED EDITION</Text>
-            </View>
 
             <View style={styles.heroSignalsRow}>
               {heroSignals.map(signal => (
@@ -475,31 +447,23 @@ export default function MonitorScreen({navigation}) {
             </View>
 
             <View style={styles.heroActionRow}>
-              <TouchableOpacity
-                activeOpacity={0.92}
+              <RipplePressable
+                haptic={state.isMonitoring ? 'medium' : 'light'}
                 onPress={handleMonitoringToggle}
-                style={styles.actionOrbTouch}>
+                rippleColor="rgba(52, 199, 89, 0.22)"
+                style={styles.armButton}>
                 <LinearGradient
                   colors={
                     state.isMonitoring
-                      ? ['rgba(255, 107, 107, 0.22)', 'rgba(255,255,255,0.04)']
-                      : ['#85ECFF', '#4CCEFF']
+                      ? ['rgba(255, 59, 48, 0.18)', 'rgba(255,255,255,0.05)']
+                      : ['rgba(52, 199, 89, 0.26)', 'rgba(255,255,255,0.06)']
                   }
                   end={{x: 1, y: 1}}
                   start={{x: 0, y: 0}}
-                  style={[
-                    styles.actionOrb,
-                    state.isMonitoring ? styles.actionOrbStop : null,
-                  ]}>
-                  <View
-                    style={[
-                      styles.actionOrbIcon,
-                      state.isMonitoring
-                        ? styles.actionOrbIconStop
-                        : styles.actionOrbIconLive,
-                    ]}>
+                  style={styles.armButtonGradient}>
+                  <View style={styles.armIconWrap}>
                     <Ionicons
-                      color={state.isMonitoring ? COLORS.RED : COLORS.BG}
+                      color={state.isMonitoring ? COLORS.RED : COLORS.SUCCESS}
                       name={
                         state.isMonitoring
                           ? 'pause-circle-outline'
@@ -508,58 +472,50 @@ export default function MonitorScreen({navigation}) {
                       size={24}
                     />
                   </View>
-                  <Text
-                    style={[
-                      styles.actionOrbTitle,
-                      state.isMonitoring ? styles.actionOrbTitleStop : null,
-                    ]}>
-                    {state.isMonitoring ? 'Pause' : 'Arm'}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.actionOrbSubtitle,
-                      state.isMonitoring ? styles.actionOrbSubtitleStop : null,
-                    ]}>
-                    Protection
-                  </Text>
+                  <View style={styles.armButtonCopy}>
+                    <Text style={styles.armButtonLabel}>
+                      {state.isMonitoring
+                        ? 'Pause Protection'
+                        : 'Arm Protection'}
+                    </Text>
+                    <Text style={styles.armButtonHint}>
+                      {state.isMonitoring
+                        ? 'Monitoring can be resumed anytime'
+                        : 'Enable live crash detection'}
+                    </Text>
+                  </View>
                 </LinearGradient>
-              </TouchableOpacity>
+              </RipplePressable>
 
               <AnimatedReanimated.View
-                style={[styles.actionOrbTouch, simulateButtonStyle]}>
-                <TouchableOpacity
-                  activeOpacity={0.92}
+                style={[styles.simulateButtonWrap, simulateButtonStyle]}>
+                <RipplePressable
+                  haptic="heavy"
                   onPress={handleSimulateCrash}
-                  style={styles.actionOrbButton}>
+                  rippleColor="rgba(255,255,255,0.32)"
+                  style={styles.simulateButtonTouch}>
                   <LinearGradient
-                    colors={[
-                      'rgba(255, 92, 138, 0.22)',
-                      'rgba(255,255,255,0.03)',
-                    ]}
+                    colors={[COLORS.PRIMARY, '#B8120C']}
                     end={{x: 1, y: 1}}
                     start={{x: 0, y: 0}}
-                    style={styles.actionOrb}>
-                    <View
-                      style={[styles.actionOrbIcon, styles.actionOrbIconDrill]}>
-                      <Ionicons color={COLORS.PINK} name="flash" size={24} />
-                    </View>
-                    <Text
-                      style={[
-                        styles.actionOrbTitle,
-                        styles.actionOrbTitleDrill,
-                      ]}>
-                      Crash
-                    </Text>
-                    <Text
-                      style={[
-                        styles.actionOrbSubtitle,
-                        styles.actionOrbSubtitleDrill,
-                      ]}>
-                      Drill
+                    style={styles.simulateButton}>
+                    <Ionicons color="#FFFFFF" name="flash" size={20} />
+                    <Text style={styles.simulateButtonText}>
+                      Simulate Crash
                     </Text>
                   </LinearGradient>
-                </TouchableOpacity>
+                </RipplePressable>
               </AnimatedReanimated.View>
+            </View>
+
+            <View style={styles.rescueStrip}>
+              <View style={styles.rescueStripIcon}>
+                <Ionicons color={COLORS.ACCENT} name="sparkles" size={16} />
+              </View>
+              <Text style={styles.rescueStripText}>
+                Test mode triggers the same 10-second emergency countdown
+                without waiting for a real impact.
+              </Text>
             </View>
           </LinearGradient>
         </RevealView>
@@ -604,8 +560,9 @@ export default function MonitorScreen({navigation}) {
               const selected = state.mode === option.value;
 
               return (
-                <TouchableOpacity
-                  activeOpacity={0.92}
+                <RipplePressable
+                  contentStyle={styles.modePillContent}
+                  haptic="light"
                   key={option.value}
                   onPress={() => handleModeSelect(option.value)}
                   style={[
@@ -633,7 +590,7 @@ export default function MonitorScreen({navigation}) {
                     </Text>
                     <Text style={styles.modeSubtitle}>{option.subtitle}</Text>
                   </View>
-                </TouchableOpacity>
+                </RipplePressable>
               );
             })}
           </ScrollView>
@@ -653,8 +610,8 @@ export default function MonitorScreen({navigation}) {
                 delay={index * 50}
                 key={action.key}
                 style={styles.quickCardReveal}>
-                <TouchableOpacity
-                  activeOpacity={0.92}
+                <RipplePressable
+                  haptic={action.key === 'drill' ? 'medium' : 'light'}
                   onPress={() => handleQuickAction(action.key)}
                   style={styles.quickCard}>
                   <View style={styles.quickIconWrap}>
@@ -666,7 +623,7 @@ export default function MonitorScreen({navigation}) {
                   </View>
                   <Text style={styles.quickTitle}>{action.title}</Text>
                   <Text style={styles.quickSubtitle}>{action.subtitle}</Text>
-                </TouchableOpacity>
+                </RipplePressable>
               </RevealView>
             ))}
           </View>
@@ -711,6 +668,21 @@ export default function MonitorScreen({navigation}) {
 
         <RevealView delay={350}>
           <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Live Google GPS</Text>
+            <Text style={styles.sectionCaption}>
+              Connected to your phone GPS and centered on the latest lock
+            </Text>
+          </View>
+
+          <LiveMap
+            location={state.location}
+            onUserLocationChange={handleLocationUpdate}
+            title="Phone GPS monitor"
+          />
+        </RevealView>
+
+        <RevealView delay={410}>
+          <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Live sensor studio</Text>
             <Text style={styles.sectionCaption}>
               {state.isMonitoring
@@ -745,8 +717,13 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(137, 159, 208, 0.24)',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
     marginBottom: 16,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: {width: 0, height: 24},
+    shadowOpacity: 0.2,
+    shadowRadius: 34,
+    elevation: 12,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -756,17 +733,13 @@ const styles = StyleSheet.create({
   heroStatusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginLeft: 12,
-  },
-  statusDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   heroStatusText: {
     color: COLORS.TEXT,
@@ -775,7 +748,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.strong,
   },
   heroTitle: {
-    marginTop: 24,
+    marginTop: 10,
     color: COLORS.TEXT,
     fontSize: 28,
     fontWeight: '800',
@@ -788,22 +761,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     fontFamily: FONTS.body,
-  },
-  versionBadge: {
-    marginTop: 12,
-    alignSelf: 'center',
-    backgroundColor: COLORS.CYAN,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  versionText: {
-    color: COLORS.BG,
-    fontSize: 10,
-    fontWeight: '700',
-    fontFamily: FONTS.strong,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   heroSignalsRow: {
     flexDirection: 'row',
@@ -847,72 +804,97 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.strong,
   },
   heroActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 20,
   },
-  actionOrbTouch: {
-    width: '48%',
-  },
-  actionOrbButton: {
+  armButton: {
     width: '100%',
+    marginBottom: 12,
   },
-  actionOrb: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 999,
+  armButtonGradient: {
+    minHeight: 64,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  armIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 12,
+    marginRight: 12,
   },
-  actionOrbStop: {
-    borderWidth: 1,
-    borderColor: COLORS.RED,
+  armButtonCopy: {
+    flex: 1,
   },
-  actionOrbIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  actionOrbIconLive: {
-    backgroundColor: 'rgba(5, 8, 22, 0.16)',
-  },
-  actionOrbIconStop: {
-    backgroundColor: 'rgba(255, 107, 107, 0.12)',
-  },
-  actionOrbIconDrill: {
-    backgroundColor: 'rgba(255, 92, 138, 0.12)',
-  },
-  actionOrbTitle: {
-    color: COLORS.BG,
-    fontSize: 20,
-    fontWeight: '800',
-    fontFamily: FONTS.heading,
-  },
-  actionOrbTitleStop: {
-    color: COLORS.RED,
-  },
-  actionOrbTitleDrill: {
-    color: COLORS.PINK,
-  },
-  actionOrbSubtitle: {
-    color: 'rgba(5, 8, 22, 0.76)',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
+  armButtonLabel: {
+    color: COLORS.TEXT,
+    fontSize: 15,
+    fontWeight: '900',
     fontFamily: FONTS.strong,
   },
-  actionOrbSubtitleStop: {
-    color: COLORS.TEXT,
+  armButtonHint: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    marginTop: 4,
+    fontFamily: FONTS.body,
   },
-  actionOrbSubtitleDrill: {
-    color: COLORS.TEXT,
+  simulateButtonWrap: {
+    width: '100%',
+  },
+  simulateButtonTouch: {
+    width: '100%',
+  },
+  simulateButton: {
+    height: 64,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: {width: 0, height: 16},
+    shadowOpacity: 0.36,
+    shadowRadius: 22,
+    elevation: 10,
+  },
+  simulateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    marginLeft: 10,
+    letterSpacing: 0.2,
+    fontFamily: FONTS.strong,
+  },
+  rescueStrip: {
+    marginTop: 20,
+    borderRadius: 18,
+    padding: 12,
+    backgroundColor: 'rgba(10, 132, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(10, 132, 255, 0.22)',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rescueStripIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(10, 132, 255, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  rescueStripText: {
+    flex: 1,
+    color: COLORS.TEXT_DIM,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: FONTS.body,
   },
   noticeCard: {
     flexDirection: 'row',
@@ -978,6 +960,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  modePillContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
   },
   modePillActive: {
     backgroundColor: 'rgba(22, 36, 61, 0.96)',

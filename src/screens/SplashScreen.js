@@ -87,7 +87,7 @@ export default function SplashScreen({navigation}) {
 
   return (
     <LinearGradient
-      colors={['#050816', '#0B1120', '#111B32']}
+      colors={[COLORS.BG, COLORS.BG2, COLORS.BG3]}
       style={styles.container}>
       <AuroraBackground variant="auth" />
 
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: 'rgba(89, 216, 255, 0.16)',
+    backgroundColor: 'rgba(255, 59, 48, 0.16)',
   },
   haloRing: {
     position: 'absolute',
@@ -166,9 +166,9 @@ const styles = StyleSheet.create({
     height: 320,
     borderRadius: 160,
     borderWidth: 1,
-    borderColor: 'rgba(89, 216, 255, 0.24)',
-    borderTopColor: 'rgba(255, 209, 102, 0.45)',
-    borderRightColor: 'rgba(255, 92, 138, 0.36)',
+    borderColor: 'rgba(10, 132, 255, 0.24)',
+    borderTopColor: 'rgba(255, 214, 10, 0.45)',
+    borderRightColor: 'rgba(255, 59, 48, 0.38)',
   },
   content: {
     alignItems: 'center',
@@ -195,6 +195,6 @@ const styles = StyleSheet.create({
     width: 110,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(89, 216, 255, 0.58)',
+    backgroundColor: 'rgba(255, 59, 48, 0.58)',
   },
 });

@@ -5,6 +5,7 @@ const ALARM_SOUND = require('../assets/sounds/resq_alarm.wav');
 
 class NotificationService {
   alarm = null;
+  softTone = null;
 
   configure() {
     try {
@@ -33,6 +34,55 @@ class NotificationService {
         this.alarm.setNumberOfLoops(-1);
         resolve(this.alarm);
       });
+    });
+  }
+
+  loadSoftTone() {
+    return new Promise(resolve => {
+      if (this.softTone?.isLoaded()) {
+        resolve(this.softTone);
+        return;
+      }
+
+      this.softTone = new Sound(ALARM_SOUND, error => {
+        if (error) {
+          console.log('Soft alert tone load failed', error);
+          resolve(null);
+          return;
+        }
+
+        this.softTone.setVolume(0.18);
+        this.softTone.setNumberOfLoops(0);
+        resolve(this.softTone);
+      });
+    });
+  }
+
+  hapticImpact(intensity = 'light') {
+    const durationMap = {
+      light: 18,
+      medium: 32,
+      heavy: 48,
+    };
+
+    Vibration.vibrate(durationMap[intensity] ?? durationMap.light);
+  }
+
+  hapticAlert() {
+    Vibration.vibrate([0, 80, 40, 120], false);
+  }
+
+  async playSoftAlertTone({volume = 0.18} = {}) {
+    const tone = await this.loadSoftTone();
+
+    if (!tone) {
+      return;
+    }
+
+    tone.setVolume(volume);
+    tone.setNumberOfLoops(0);
+    tone.stop(() => {
+      tone.play();
     });
   }
 
@@ -83,6 +133,11 @@ class NotificationService {
     if (this.alarm) {
       this.alarm.release();
       this.alarm = null;
+    }
+
+    if (this.softTone) {
+      this.softTone.release();
+      this.softTone = null;
     }
   }
 }

@@ -180,7 +180,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}>
         <RevealView delay={50}>
           <LinearGradient
-            colors={['rgba(16, 25, 43, 0.95)', 'rgba(22, 36, 61, 0.8)']}
+            colors={['rgba(28, 28, 30, 0.95)', 'rgba(13, 13, 13, 0.84)']}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={styles.hero}>
@@ -204,6 +204,64 @@ export default function ProfileScreen() {
               ))}
             </View>
           </LinearGradient>
+        </RevealView>
+
+        <RevealView delay={100}>
+          <View style={styles.contactCard}>
+            <View style={styles.contactHeader}>
+              <View>
+                <Text style={styles.contactEyebrow}>Emergency contacts</Text>
+                <Text style={styles.contactTitle}>Primary responder</Text>
+              </View>
+              <View style={styles.contactLiveBadge}>
+                <Ionicons
+                  color={COLORS.SUCCESS}
+                  name="shield-checkmark"
+                  size={15}
+                />
+                <Text style={styles.contactLiveText}>Ready</Text>
+              </View>
+            </View>
+
+            <View style={styles.contactPersonRow}>
+              <LinearGradient
+                colors={[COLORS.PRIMARY, COLORS.ACCENT]}
+                end={{x: 1, y: 1}}
+                start={{x: 0, y: 0}}
+                style={styles.contactAvatar}>
+                <Text style={styles.contactAvatarText}>
+                  {(form.emergencyContact?.name || 'E').slice(0, 1)}
+                </Text>
+              </LinearGradient>
+              <View style={styles.contactPersonCopy}>
+                <Text style={styles.contactName}>
+                  {form.emergencyContact?.name || 'Add emergency contact'}
+                </Text>
+                <Text style={styles.contactPhone}>
+                  {form.emergencyContact?.phone ||
+                    'Phone number required for dispatch'}
+                </Text>
+              </View>
+              <Ionicons color={COLORS.MUTED2} name="call-outline" size={22} />
+            </View>
+
+            <View style={styles.medicalRow}>
+              <View style={styles.medicalTile}>
+                <Text style={styles.medicalLabel}>Blood</Text>
+                <Text style={styles.medicalValue}>
+                  {form.bloodGroup || 'Unknown'}
+                </Text>
+              </View>
+              <View style={styles.medicalTile}>
+                <Text style={styles.medicalLabel}>Vehicle</Text>
+                <Text numberOfLines={1} style={styles.medicalValue}>
+                  {form.vehicleId ||
+                    MODE_META[form.vehicleMode]?.label ||
+                    'Bike'}
+                </Text>
+              </View>
+            </View>
+          </View>
         </RevealView>
 
         <RevealView delay={130}>
@@ -323,8 +381,13 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(137, 159, 208, 0.24)',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
     marginBottom: 18,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: {width: 0, height: 20},
+    shadowOpacity: 0.16,
+    shadowRadius: 30,
+    elevation: 10,
   },
   heroTitle: {
     marginTop: 22,
@@ -364,18 +427,136 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
     fontFamily: FONTS.strong,
   },
+  contactCard: {
+    backgroundColor: 'rgba(22, 22, 24, 0.92)',
+    borderRadius: 26,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    marginBottom: 18,
+    shadowColor: COLORS.ACCENT,
+    shadowOffset: {width: 0, height: 18},
+    shadowOpacity: 0.12,
+    shadowRadius: 28,
+    elevation: 8,
+  },
+  contactHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  contactEyebrow: {
+    color: COLORS.PRIMARY,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    fontFamily: FONTS.strong,
+  },
+  contactTitle: {
+    color: COLORS.TEXT,
+    fontSize: 20,
+    fontWeight: '900',
+    marginTop: 4,
+    fontFamily: FONTS.heading,
+  },
+  contactLiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(52, 199, 89, 0.24)',
+  },
+  contactLiveText: {
+    color: COLORS.SUCCESS,
+    fontSize: 11,
+    fontWeight: '900',
+    marginLeft: 6,
+    fontFamily: FONTS.strong,
+  },
+  contactPersonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 22,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  contactAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  contactAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    fontFamily: FONTS.heading,
+  },
+  contactPersonCopy: {
+    flex: 1,
+  },
+  contactName: {
+    color: COLORS.TEXT,
+    fontSize: 16,
+    fontWeight: '900',
+    fontFamily: FONTS.strong,
+  },
+  contactPhone: {
+    color: COLORS.MUTED2,
+    fontSize: 12,
+    marginTop: 5,
+    fontFamily: FONTS.body,
+  },
+  medicalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 14,
+  },
+  medicalTile: {
+    width: '48%',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.09)',
+    padding: 14,
+  },
+  medicalLabel: {
+    color: COLORS.MUTED2,
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    fontFamily: FONTS.strong,
+  },
+  medicalValue: {
+    color: COLORS.TEXT,
+    fontSize: 17,
+    fontWeight: '900',
+    marginTop: 6,
+    fontFamily: FONTS.heading,
+  },
   formCard: {
-    backgroundColor: 'rgba(16, 25, 43, 0.9)',
+    backgroundColor: 'rgba(22, 22, 24, 0.92)',
     borderRadius: 24,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(137, 159, 208, 0.22)',
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   fieldBlock: {
     marginBottom: 12,
   },
   input: {
-    backgroundColor: 'rgba(11, 17, 32, 0.86)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
     borderColor: COLORS.BORDER,
     borderRadius: 16,
@@ -384,7 +565,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   inputFocused: {
-    borderColor: COLORS.CYAN,
+    borderColor: COLORS.ACCENT,
   },
   errorText: {
     color: COLORS.PINK,
@@ -426,7 +607,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 8,
-    backgroundColor: '#7BE8FF',
+    backgroundColor: COLORS.ACCENT,
     borderRadius: 18,
     height: 54,
     alignItems: 'center',

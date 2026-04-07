@@ -20,10 +20,10 @@ const navigationTheme = {
     ...DarkTheme.colors,
     background: COLORS.BG,
     card: COLORS.BG2,
-    border: 'rgba(0,229,255,0.08)',
-    primary: COLORS.CYAN,
+    border: COLORS.BORDER,
+    primary: COLORS.ACCENT,
     text: COLORS.TEXT,
-    notification: COLORS.PINK,
+    notification: COLORS.PRIMARY,
   },
 };
 

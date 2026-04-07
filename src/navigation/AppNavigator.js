@@ -39,14 +39,14 @@ function TabBarIcon({routeName, focused, color, size}) {
     Profile: focused ? 'person-circle' : 'person-circle-outline',
   };
   const toneMap = {
-    Dispatch: [COLORS.GREEN, COLORS.CYAN],
-    Insights: [COLORS.BLUE, COLORS.CYAN],
-    Contacts: [COLORS.PINK, COLORS.ORANGE],
-    Monitor: [COLORS.CYAN, COLORS.BLUE],
-    Profile: [COLORS.PINK, COLORS.ORANGE],
+    Dispatch: [COLORS.PRIMARY, COLORS.ORANGE],
+    Insights: [COLORS.ACCENT, COLORS.CYAN],
+    Contacts: [COLORS.PRIMARY, COLORS.ORANGE],
+    Monitor: [COLORS.PRIMARY, COLORS.ACCENT],
+    Profile: [COLORS.ACCENT, COLORS.SUCCESS],
     Safety: [COLORS.YELLOW, COLORS.ORANGE],
   };
-  const tones = toneMap[routeName] ?? [COLORS.CYAN, COLORS.BLUE];
+  const tones = toneMap[routeName] ?? [COLORS.ACCENT, COLORS.BLUE];
   const animatedOrbStyle = {
     transform: [
       {
@@ -87,7 +87,7 @@ function TabBarIcon({routeName, focused, color, size}) {
           start={{x: 0, y: 0}}
           style={styles.tabOrb}>
           <Ionicons
-            color={COLORS.BG}
+            color={COLORS.TEXT}
             name={iconMap[routeName]}
             size={size - 1}
           />
@@ -115,7 +115,7 @@ function getTabScreenOptions(routeName, title = routeName) {
 function TabBarBackground() {
   return (
     <LinearGradient
-      colors={['rgba(20, 34, 56, 0.94)', 'rgba(14, 25, 44, 0.86)']}
+      colors={['rgba(28, 28, 30, 0.94)', 'rgba(13, 13, 13, 0.88)']}
       start={{x: 0, y: 0}}
       end={{x: 1, y: 1}}
       style={styles.tabBarBackground}
@@ -144,7 +144,7 @@ function MainTabs() {
           paddingTop: 10,
           overflow: 'hidden',
           elevation: 0,
-          shadowColor: COLORS.CYAN,
+          shadowColor: COLORS.PRIMARY,
           shadowOffset: {width: 0, height: 8},
           shadowOpacity: 0.22,
           shadowRadius: 16,
@@ -166,12 +166,12 @@ function MainTabs() {
       <Tab.Screen
         name="Monitor"
         component={MonitorScreen}
-        options={getTabScreenOptions('Monitor', 'Protect')}
+        options={getTabScreenOptions('Monitor', 'Home')}
       />
       <Tab.Screen
         name="Dispatch"
         component={DispatchScreen}
-        options={getTabScreenOptions('Dispatch', 'Rescue')}
+        options={getTabScreenOptions('Dispatch', 'SOS')}
       />
       <Tab.Screen
         name="Insights"
