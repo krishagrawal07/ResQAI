@@ -2,6 +2,22 @@ const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 ).replace(/\/+$/, '');
 
+function parseJsonResponse(text, response) {
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    if (!response.ok) {
+      return {message: text};
+    }
+
+    throw new Error('API returned an invalid JSON response.');
+  }
+}
+
 function toSocketBaseUrl() {
   return API_BASE_URL.replace(/\/api$/, '');
 }
@@ -17,7 +33,7 @@ async function apiRequest(path, options = {}) {
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : {};
+  const payload = parseJsonResponse(text, response);
 
   if (!response.ok) {
     throw new Error(payload?.message || `Request failed (${response.status})`);

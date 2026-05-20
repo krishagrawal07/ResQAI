@@ -1,105 +1,133 @@
 import {AccessibilityInfo, Vibration} from 'react-native';
-import Sound from 'react-native-sound';
+import {Audio, InterruptionModeAndroid, InterruptionModeIOS} from 'expo-av';
+import * as Haptics from 'expo-haptics';
 
 const ALARM_SOUND = require('../assets/sounds/resq_alarm.wav');
 
+const IMPACT_STYLE = {
+  heavy: Haptics.ImpactFeedbackStyle.Heavy,
+  light: Haptics.ImpactFeedbackStyle.Light,
+  medium: Haptics.ImpactFeedbackStyle.Medium,
+};
+
 class NotificationService {
   alarm = null;
+
   softTone = null;
 
-  configure() {
+  async configure() {
     try {
-      Sound.setCategory('Playback', true);
-      Sound.setActive(true);
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: false,
+        shouldDuckAndroid: true,
+        staysActiveInBackground: true,
+      });
     } catch (error) {
       console.log('NotificationService.configure', error);
     }
   }
 
-  loadAlarm() {
-    return new Promise(resolve => {
-      if (this.alarm?.isLoaded()) {
-        resolve(this.alarm);
-        return;
-      }
+  async loadAlarm() {
+    if (this.alarm) {
+      return this.alarm;
+    }
 
-      this.alarm = new Sound(ALARM_SOUND, error => {
-        if (error) {
-          console.log('Alarm sound load failed', error);
-          resolve(null);
-          return;
-        }
-
-        this.alarm.setVolume(1);
-        this.alarm.setNumberOfLoops(-1);
-        resolve(this.alarm);
+    try {
+      const {sound} = await Audio.Sound.createAsync(ALARM_SOUND, {
+        isLooping: true,
+        shouldPlay: false,
+        volume: 1,
       });
-    });
+      this.alarm = sound;
+      return this.alarm;
+    } catch (error) {
+      console.log('Alarm sound load failed', error);
+      return null;
+    }
   }
 
-  loadSoftTone() {
-    return new Promise(resolve => {
-      if (this.softTone?.isLoaded()) {
-        resolve(this.softTone);
-        return;
-      }
+  async loadSoftTone() {
+    if (this.softTone) {
+      return this.softTone;
+    }
 
-      this.softTone = new Sound(ALARM_SOUND, error => {
-        if (error) {
-          console.log('Soft alert tone load failed', error);
-          resolve(null);
-          return;
-        }
-
-        this.softTone.setVolume(0.18);
-        this.softTone.setNumberOfLoops(0);
-        resolve(this.softTone);
+    try {
+      const {sound} = await Audio.Sound.createAsync(ALARM_SOUND, {
+        isLooping: false,
+        shouldPlay: false,
+        volume: 0.18,
       });
-    });
+      this.softTone = sound;
+      return this.softTone;
+    } catch (error) {
+      console.log('Soft alert tone load failed', error);
+      return null;
+    }
   }
 
-  hapticImpact(intensity = 'light') {
-    const durationMap = {
-      light: 18,
-      medium: 32,
-      heavy: 48,
-    };
-
-    Vibration.vibrate(durationMap[intensity] ?? durationMap.light);
+  async hapticImpact(intensity = 'light') {
+    try {
+      await Haptics.impactAsync(IMPACT_STYLE[intensity] ?? IMPACT_STYLE.light);
+    } catch (error) {
+      const durationMap = {
+        light: 18,
+        medium: 32,
+        heavy: 48,
+      };
+      Vibration.vibrate(durationMap[intensity] ?? durationMap.light);
+    }
   }
 
-  hapticAlert() {
+  async hapticAlert() {
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    } catch (error) {
+      // Vibration gives Android and older devices a dependable fallback.
+    }
     Vibration.vibrate([0, 80, 40, 120], false);
   }
 
   async playSoftAlertTone({volume = 0.18} = {}) {
-    const tone = await this.loadSoftTone();
+    try {
+      const tone = await this.loadSoftTone();
 
-    if (!tone) {
-      return;
+      if (!tone) {
+        return;
+      }
+
+      await tone.setVolumeAsync(volume);
+      await tone.setIsLoopingAsync(false);
+      await tone.setPositionAsync(0);
+      await tone.playAsync();
+    } catch (error) {
+      console.log('Soft alert tone play failed', error);
     }
-
-    tone.setVolume(volume);
-    tone.setNumberOfLoops(0);
-    tone.stop(() => {
-      tone.play();
-    });
   }
 
   async playAlarm({silentDispatch = false} = {}) {
-    const alarm = await this.loadAlarm();
     if (silentDispatch) {
       Vibration.vibrate(150);
     } else {
       Vibration.vibrate([0, 400, 250], true);
     }
 
-    if (alarm) {
-      alarm.setVolume(silentDispatch ? 0.45 : 1);
-      alarm.setNumberOfLoops(silentDispatch ? 0 : -1);
-      alarm.stop(() => {
-        alarm.play();
-      });
+    const alarm = await this.loadAlarm();
+
+    if (!alarm) {
+      return;
+    }
+
+    try {
+      await alarm.setVolumeAsync(silentDispatch ? 0.45 : 1);
+      await alarm.setIsLoopingAsync(!silentDispatch);
+      await alarm.setPositionAsync(0);
+      await alarm.playAsync();
+    } catch (error) {
+      console.log('Alarm sound play failed', error);
     }
   }
 
@@ -123,7 +151,9 @@ class NotificationService {
     Vibration.cancel();
 
     if (this.alarm) {
-      this.alarm.stop();
+      this.alarm.stopAsync().catch(error => {
+        console.log('Alarm stop failed', error);
+      });
     }
   }
 
@@ -131,12 +161,16 @@ class NotificationService {
     this.stopAlarm();
 
     if (this.alarm) {
-      this.alarm.release();
+      this.alarm.unloadAsync().catch(error => {
+        console.log('Alarm unload failed', error);
+      });
       this.alarm = null;
     }
 
     if (this.softTone) {
-      this.softTone.release();
+      this.softTone.unloadAsync().catch(error => {
+        console.log('Soft tone unload failed', error);
+      });
       this.softTone = null;
     }
   }

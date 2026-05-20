@@ -12,17 +12,27 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function toCoordinate(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function parseLocation(input = {}) {
   return {
-    lat: toNumber(input.lat),
-    lng: toNumber(input.lng),
+    lat: toCoordinate(input.lat),
+    lng: toCoordinate(input.lng),
     address: input.address || '',
     speedKmh: toNumber(input.speedKmh || input.speed || 0),
   };
 }
 
 function hasValidLocation(location) {
-  return Number.isFinite(location.lat) && Number.isFinite(location.lng);
+  return (
+    Number.isFinite(location.lat) &&
+    Number.isFinite(location.lng) &&
+    Math.abs(location.lat) <= 90 &&
+    Math.abs(location.lng) <= 180
+  );
 }
 
 incidentsRouter.get('/', (request, response) => {

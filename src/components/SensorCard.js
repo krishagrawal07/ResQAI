@@ -3,7 +3,7 @@ import {Animated, StyleSheet, Text, View} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {COLORS, FONTS} from '../utils/constants';
 
-export default function SensorCard({
+function SensorCard({
   label,
   value,
   unit,
@@ -83,6 +83,8 @@ export default function SensorCard({
     </View>
   );
 }
+
+export default React.memo(SensorCard);
 
 const styles = StyleSheet.create({
   card: {

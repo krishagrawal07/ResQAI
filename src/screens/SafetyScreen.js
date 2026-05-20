@@ -25,6 +25,7 @@ import {
   SENSITIVITY_OPTIONS,
   STORAGE_KEYS,
 } from '../utils/constants';
+import {requestPhoneCallPermission} from '../utils/permissions';
 
 const TOGGLES = [
   {
@@ -56,6 +57,12 @@ const TOGGLES = [
     icon: 'radio-outline',
     title: 'Nearby responder ping',
     subtitle: 'Add community help points to the dispatch list',
+  },
+  {
+    key: 'shakeToSOS',
+    icon: 'phone-portrait-outline',
+    title: 'Shake to SOS',
+    subtitle: 'Trigger immediate SOS after repeated strong phone shakes',
   },
   {
     key: 'silentDispatch',
@@ -144,6 +151,11 @@ export default function SafetyScreen() {
   const handleQuickDial = async phone => {
     const dialUrl = `tel:${phone}`;
     try {
+      const phoneCall = await requestPhoneCallPermission();
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {permissions: {phoneCall}},
+      });
       const canOpen = await Linking.canOpenURL(dialUrl);
       if (!canOpen) {
         Alert.alert('Dial unavailable', `Calling ${phone} is not supported.`);

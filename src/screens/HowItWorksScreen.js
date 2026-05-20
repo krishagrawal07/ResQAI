@@ -15,7 +15,7 @@ const PIPELINE = [
     icon: 'scan-outline',
     title: 'Detect',
     subtitle:
-      'Sensor fusion watches motion, rotation, speed, and audio together.',
+      'Sensor fusion watches impact, rotation, GPS speed drop, and phone shake together.',
   },
   {
     key: 'verify',
@@ -77,17 +77,17 @@ export default function HowItWorksScreen() {
       accent: isMonitoring ? COLORS.GREEN : COLORS.YELLOW,
     },
     {
-      key: 'preview',
+      key: 'feed',
       icon: 'pulse-outline',
       title:
-        runtime.sensorSource === 'preview'
-          ? 'Preview feed is keeping the UI alive'
+        runtime.sensorSource === 'drill'
+          ? 'Crash drill telemetry is active'
           : 'Live feed is flowing from the device',
       subtitle:
-        runtime.sensorSource === 'preview'
-          ? 'This helps the app feel complete on simulators or when permissions are missing.'
+        runtime.sensorSource === 'drill'
+          ? 'The drill uses the same countdown and SOS path without pretending to be sensor data.'
           : 'Your sensors are delivering real updates for the crash model.',
-      accent: runtime.sensorSource === 'preview' ? COLORS.YELLOW : COLORS.CYAN,
+      accent: runtime.sensorSource === 'drill' ? COLORS.YELLOW : COLORS.CYAN,
     },
     {
       key: 'dispatch',
@@ -129,9 +129,9 @@ export default function HowItWorksScreen() {
               Why this feels like a real app now
             </Text>
             <Text style={styles.heroCopy}>
-              The experience is no longer just a sensor mockup. It now carries a
-              proper safety flow, profile system, response desk, configurable
-              rescue settings, and a preview mode that prevents dead screens.
+              The experience now uses real Expo sensors, GPS, haptics, alert
+              audio, SMS handoff, a proper safety flow, configurable rescue
+              settings, and a dispatch desk for live incidents.
             </Text>
           </LinearGradient>
         </RevealView>

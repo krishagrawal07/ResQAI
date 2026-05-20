@@ -1,16 +1,5 @@
 import CrashDetectionService from '../src/services/CrashDetectionService';
 
-const cruisingSample = {
-  ax: 0,
-  ay: 0,
-  az: 9.81,
-  gx: 0,
-  gy: 0,
-  gz: 0,
-  speed: 60,
-  db: 42,
-};
-
 describe('CrashDetectionService', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -26,36 +15,36 @@ describe('CrashDetectionService', () => {
     jest.useRealTimers();
   });
 
-  it('triggers when high impact, sudden stop, and abnormal tilt happen together', () => {
+  it('triggers the SOS countdown when acceleration alone reaches 20 points', () => {
     const onCrash = jest.fn();
     CrashDetectionService.setCallback(onCrash);
 
-    expect(CrashDetectionService.check(cruisingSample)).toBeNull();
-
     const result = CrashDetectionService.check({
-      ax: 36,
-      ay: 20,
-      az: 5,
-      gx: 180,
-      gy: 45,
-      gz: 30,
-      speed: 5,
-      db: 112,
+      ax: 26,
+      ay: 0,
+      az: 0,
+      gx: 0,
+      gy: 0,
+      gz: 0,
+      speed: 55,
+      speedBeforeKmh: 55,
+      speedDropKmh: 0,
     });
 
     expect(result).toEqual(
       expect.objectContaining({
+        action: 'sos-countdown',
         severity: expect.objectContaining({
-          label: expect.any(String),
-          score: expect.any(Number),
+          action: 'sos-countdown',
+          label: 'Medium',
+          score: 20,
         }),
         snapshot: expect.objectContaining({
-          signals: {
-            abnormalOrientation: true,
+          signals: expect.objectContaining({
+            abnormalRotation: false,
             highImpact: true,
-            rapidRotation: true,
-            suddenStop: true,
-          },
+            suddenSpeedDrop: false,
+          }),
         }),
       }),
     );
@@ -63,18 +52,79 @@ describe('CrashDetectionService', () => {
     expect(onCrash).toHaveBeenCalledWith(result);
   });
 
-  it('does not trigger on a sudden stop when the phone remains upright', () => {
-    CrashDetectionService.check(cruisingSample);
+  it('keeps the event in SOS countdown mode at 35 points', () => {
+    const result = CrashDetectionService.check({
+      ax: 26,
+      ay: 0,
+      az: 0,
+      gx: 0,
+      gy: 0,
+      gz: 0,
+      speed: 18,
+      speedBeforeKmh: 50,
+      speedDropKmh: 32,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        action: 'sos-countdown',
+        severity: expect.objectContaining({
+          action: 'sos-countdown',
+          label: 'Medium',
+          score: 35,
+        }),
+      }),
+    );
+  });
+
+  it('triggers full emergency when all three crash signals are present', () => {
+    const onCrash = jest.fn();
+    CrashDetectionService.setCallback(onCrash);
 
     const result = CrashDetectionService.check({
-      ax: 0,
+      ax: 26,
       ay: 0,
-      az: 36,
-      gx: 20,
-      gy: 12,
-      gz: 8,
-      speed: 5,
-      db: 100,
+      az: 0,
+      gx: 170,
+      gy: 0,
+      gz: 0,
+      speed: 10,
+      speedBeforeKmh: 45,
+      speedDropKmh: 35,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        action: 'full-emergency',
+        severity: expect.objectContaining({
+          action: 'full-emergency',
+          label: 'Critical',
+          score: 50,
+        }),
+        snapshot: expect.objectContaining({
+          signals: expect.objectContaining({
+            abnormalRotation: true,
+            highImpact: true,
+            suddenSpeedDrop: true,
+          }),
+        }),
+      }),
+    );
+    expect(onCrash).toHaveBeenCalledTimes(1);
+    expect(onCrash).toHaveBeenCalledWith(result);
+  });
+
+  it('ignores events that stay below the SOS threshold', () => {
+    const result = CrashDetectionService.check({
+      ax: 10,
+      ay: 0,
+      az: 0,
+      gx: 0,
+      gy: 0,
+      gz: 0,
+      speed: 32,
+      speedBeforeKmh: 50,
+      speedDropKmh: 18,
     });
 
     expect(result).toBeNull();

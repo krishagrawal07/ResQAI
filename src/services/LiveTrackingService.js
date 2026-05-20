@@ -6,21 +6,31 @@ class LiveTrackingService {
 
   incidentId = null;
 
+  pushInFlight = false;
+
   async pushCurrentLocation() {
-    if (!this.incidentId) {
+    if (!this.incidentId || this.pushInFlight) {
       return null;
     }
 
-    const currentLocation = await LocationService.getCurrentLocation();
-    return BackendService.updateIncidentLocation(
-      this.incidentId,
-      currentLocation,
-    );
+    this.pushInFlight = true;
+
+    try {
+      const currentLocation = await LocationService.getCurrentLocation({
+        skipReverseGeocode: true,
+      });
+      return BackendService.updateIncidentLocation(
+        this.incidentId,
+        currentLocation,
+      );
+    } finally {
+      this.pushInFlight = false;
+    }
   }
 
   async start({
     incidentId,
-    intervalMs = 6000,
+    intervalMs = 4000,
     onLocationPushed,
     onTrackingError,
   }) {
@@ -37,6 +47,10 @@ class LiveTrackingService {
     this.intervalId = setInterval(async () => {
       try {
         const updatedIncident = await this.pushCurrentLocation();
+        if (!updatedIncident) {
+          return;
+        }
+
         if (updatedIncident?.status === 'resolved') {
           await this.stop();
           return;
@@ -55,6 +69,7 @@ class LiveTrackingService {
     }
 
     this.incidentId = null;
+    this.pushInFlight = false;
   }
 }
 

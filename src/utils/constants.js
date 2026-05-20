@@ -47,42 +47,65 @@ export const FONTS = {
   }),
 };
 
+const ACCELERATION_THRESHOLD_MS2 = 25;
+const SUDDEN_SPEED_DROP_THRESHOLD_KMH = 20;
+const FULL_EMERGENCY_SCORE = 40;
+const ACCELERATION_THRESHOLD_G = Number(
+  (ACCELERATION_THRESHOLD_MS2 / 9.81).toFixed(2),
+);
+
+export const CRASH_SCORING = {
+  accelerationThresholdMs2: ACCELERATION_THRESHOLD_MS2,
+  countdownSeconds: 10,
+  fullEmergencyScore: FULL_EMERGENCY_SCORE,
+  highImpactPoints: 20,
+  maxScore: 50,
+  sosCountdownScore: 20,
+  suddenSpeedDropThresholdKmh: SUDDEN_SPEED_DROP_THRESHOLD_KMH,
+  suddenSpeedDropPoints: 15,
+  abnormalRotationPoints: 15,
+};
+
 export const CRASH_THRESHOLDS = {
   biker: {
-    accelG: 3.2,
-    accelMagnitude: 20,
+    accelG: ACCELERATION_THRESHOLD_G,
+    accelMagnitude: ACCELERATION_THRESHOLD_MS2,
     orientationTiltDeg: 50,
     gyroMagnitude: 150,
     minSpeedBeforeKmh: 28,
+    scoreThreshold: FULL_EMERGENCY_SCORE,
+    speedDropKmh: SUDDEN_SPEED_DROP_THRESHOLD_KMH,
     speedDropPercent: 80,
-    audioDb: 100,
   },
   car: {
-    accelG: 3.8,
-    accelMagnitude: 25,
+    accelG: ACCELERATION_THRESHOLD_G,
+    accelMagnitude: ACCELERATION_THRESHOLD_MS2,
     orientationTiltDeg: 58,
     gyroMagnitude: 120,
     minSpeedBeforeKmh: 30,
+    scoreThreshold: FULL_EMERGENCY_SCORE,
+    speedDropKmh: SUDDEN_SPEED_DROP_THRESHOLD_KMH,
     speedDropPercent: 70,
-    audioDb: 105,
   },
   scooter: {
-    accelG: 3.0,
-    accelMagnitude: 18,
+    accelG: ACCELERATION_THRESHOLD_G,
+    accelMagnitude: ACCELERATION_THRESHOLD_MS2,
     orientationTiltDeg: 50,
     gyroMagnitude: 140,
     minSpeedBeforeKmh: 24,
+    scoreThreshold: FULL_EMERGENCY_SCORE,
+    speedDropKmh: SUDDEN_SPEED_DROP_THRESHOLD_KMH,
     speedDropPercent: 78,
-    audioDb: 98,
   },
   family: {
-    accelG: 4.0,
-    accelMagnitude: 28,
+    accelG: ACCELERATION_THRESHOLD_G,
+    accelMagnitude: ACCELERATION_THRESHOLD_MS2,
     orientationTiltDeg: 58,
     gyroMagnitude: 110,
     minSpeedBeforeKmh: 32,
+    scoreThreshold: FULL_EMERGENCY_SCORE,
+    speedDropKmh: SUDDEN_SPEED_DROP_THRESHOLD_KMH,
     speedDropPercent: 65,
-    audioDb: 108,
   },
 };
 
@@ -158,6 +181,7 @@ export const DEFAULT_PREFERENCES = {
   silentDispatch: false,
   shareMedicalCard: true,
   notifyNearbyResponders: true,
+  shakeToSOS: true,
 };
 
 export const DEFAULT_EMERGENCY_PLAN = {
@@ -172,8 +196,10 @@ export const STORAGE_KEYS = {
   USER_PROFILE: 'resqai_user_profile',
   APP_PREFERENCES: 'resqai_app_preferences',
   EMERGENCY_PLAN: 'resqai_emergency_plan',
+  MONITORING_SESSION: 'resqai_monitoring_session',
   LAST_LOCATION: 'resqai_last_location',
   LOCAL_CRASH_LOGS: 'resqai_local_crash_logs',
+  BACKGROUND_HEARTBEAT: 'resqai_background_heartbeat',
   LOCAL_FIREBASE_USER: 'resqai_local_firebase_user',
 };
 

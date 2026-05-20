@@ -143,8 +143,8 @@ export function PulsingSafetyIndicator({isMonitoring}) {
             <Text style={styles.safetyLabel}>Monitoring</Text>
             <Text style={styles.safetyStatus}>You are safe</Text>
             <Text style={styles.safetyMeta}>
-              AI sensors watch for impact, rotation, speed drop, and cabin
-              noise.
+              AI sensors watch for impact, rotation, GPS speed drop, and shake
+              SOS.
             </Text>
           </View>
         </LinearGradient>

@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Modal, StyleSheet, Text, Vibration, View} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import AnimatedReanimated, {
   Easing,
@@ -17,14 +16,9 @@ import {useNavigation} from '@react-navigation/native';
 import {CountdownProgressRing} from './EmergencyAnimations';
 import {EmergencyGlowBorder, RipplePressable} from './MicroInteractions';
 import {useAppContext} from '../context/AppContext';
-import BackendService from '../services/BackendService';
-import CrashDetectionService from '../services/CrashDetectionService';
-import FirebaseService from '../services/FirebaseService';
-import LiveTrackingService from '../services/LiveTrackingService';
-import LocationService from '../services/LocationService';
+import EmergencyService from '../services/EmergencyService';
 import NotificationService from '../services/NotificationService';
-import SMSService from '../services/SMSService';
-import {COLORS, FONTS, STORAGE_KEYS} from '../utils/constants';
+import {COLORS, CRASH_SCORING, FONTS} from '../utils/constants';
 
 function CrashRipple({index, pulse}) {
   const ringStyle = useAnimatedStyle(() => {
@@ -41,26 +35,20 @@ function CrashRipple({index, pulse}) {
 
 export default function CrashAlertModal() {
   const navigation = useNavigation();
-  const {
-    state: {
-      crashDetected,
-      crashMeta,
-      emergencyPlan,
-      location,
-      mode,
-      preferences,
-      sensors,
-      userProfile,
-    },
-    dispatch,
-  } = useAppContext();
-  const [countdown, setCountdown] = useState(10);
+  const {state, dispatch} = useAppContext();
+  const {crashDetected, crashMeta, preferences} = state;
+  const latestStateRef = useRef(state);
+  const [countdown, setCountdown] = useState(CRASH_SCORING.countdownSeconds);
   const shake = useSharedValue(0);
   const flash = useSharedValue(0);
   const warningPulse = useSharedValue(0);
   const ripplePulse = useSharedValue(0);
   const countdownRef = useRef(null);
   const isHandlingRef = useRef(false);
+
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
 
   const clearTimers = useCallback(() => {
     if (countdownRef.current) {
@@ -69,14 +57,14 @@ export default function CrashAlertModal() {
     }
   }, []);
 
-  const handleCancel = useCallback(() => {
+  const handleSafeConfirmation = useCallback(() => {
     clearTimers();
     NotificationService.stopAlarm();
     Vibration.cancel();
     dispatch({type: 'RESET_CRASH'});
   }, [clearTimers, dispatch]);
 
-  const handleSOS = useCallback(async () => {
+  const triggerEmergencyAlert = useCallback(async () => {
     if (isHandlingRef.current) {
       return;
     }
@@ -85,134 +73,28 @@ export default function CrashAlertModal() {
     clearTimers();
     NotificationService.stopAlarm();
     Vibration.cancel();
-    dispatch({type: 'SOS_TRIGGERED'});
-
-    let resolvedLocation = location;
-    let backendIncident = null;
-    const fallbackSeverity = CrashDetectionService.previewSeverity(sensors, {
-      speedBeforeKmh: Math.max(sensors.speed + 30, 45),
-    });
-    const includeGuardianMode = Boolean(preferences.guardianMode);
-    const includeMedicalCard = Boolean(preferences.shareMedicalCard);
-    const includeNearbyResponders = Boolean(preferences.notifyNearbyResponders);
-    const incidentEmergencyPlan = includeMedicalCard
-      ? emergencyPlan
-      : {
-          ...emergencyPlan,
-          bloodGroup: 'Hidden by user preference',
-          medicalNotes: 'Hidden by user preference',
-        };
-    const incidentUserProfile = includeMedicalCard
-      ? userProfile
-      : {
-          ...userProfile,
-          bloodGroup: 'Hidden',
-          medicalNotes: 'Hidden by user preference',
-        };
-    const crashSnapshot = crashMeta?.snapshot ?? fallbackSeverity.snapshot;
-    const crashSeverity = crashMeta?.severity ?? fallbackSeverity.severity;
-
+    const latestState = latestStateRef.current;
     try {
-      resolvedLocation = await LocationService.getCurrentLocation();
-      dispatch({type: 'SET_LOCATION', payload: resolvedLocation});
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.LAST_LOCATION,
-        JSON.stringify(resolvedLocation),
-      );
-    } catch (error) {
-      resolvedLocation = {
-        lat: location.lat,
-        lng: location.lng,
-        address: location.address || 'Location unavailable',
-      };
-    }
-
-    const nearbyPolice = includeNearbyResponders
-      ? await LocationService.getNearbyPlaces(
-          resolvedLocation.lat,
-          resolvedLocation.lng,
-          'police',
-        )
-      : [];
-
-    try {
-      backendIncident = await BackendService.createIncident({
-        dispatchPreferences: {
-          guardianMode: includeGuardianMode,
-          notifyNearbyResponders: includeNearbyResponders,
-        },
-        emergencyPlan: incidentEmergencyPlan,
-        location: resolvedLocation,
-        metadata: {
-          appVersion: 'mobile-mvp',
-          detectedAt: crashMeta?.detectedAt || new Date().toISOString(),
-          source: 'mobile-app',
-        },
-        mode,
-        sensorSnapshot: {
-          ...crashSnapshot,
-          severityLabel: crashSeverity.label,
-          severityScore: crashSeverity.score,
-          speed: sensors.speed,
-        },
-        userProfile: incidentUserProfile,
+      await EmergencyService.triggerSOS({
+        crashMetaOverride: latestState.crashMeta,
+        dispatch,
+        source: 'crash-countdown',
+        state: latestState,
       });
-      dispatch({type: 'SET_ACTIVE_INCIDENT', payload: backendIncident});
-    } catch (backendError) {
+
+      navigation.navigate('Dispatch');
+    } catch (error) {
+      isHandlingRef.current = false;
+      console.log('Crash countdown SOS failed', error);
       dispatch({
         type: 'SET_RUNTIME_STATUS',
-        payload: {startupMode: 'preview'},
-      });
-
-      await SMSService.sendEmergencySMS(
-        incidentUserProfile,
-        resolvedLocation,
-        nearbyPolice,
-        {
-          includeGuardianMode,
-          includeNearbyResponders,
-        },
-      );
-    }
-
-    await Promise.allSettled([
-      FirebaseService.logCrashEvent(
-        sensors,
-        resolvedLocation,
-        FirebaseService.getCurrentUserId(),
-      ),
-    ]);
-
-    if (backendIncident?.id) {
-      await LiveTrackingService.start({
-        incidentId: backendIncident.id,
-        onLocationPushed: pushedLocation => {
-          if (pushedLocation) {
-            dispatch({type: 'SET_LOCATION', payload: pushedLocation});
-            dispatch({
-              type: 'SET_ACTIVE_INCIDENT',
-              payload: {location: pushedLocation},
-            });
-          }
+        payload: {
+          lastSosError: error?.message || 'Emergency alert could not be sent',
+          startupMode: 'local-sos',
         },
       });
     }
-
-    navigation.navigate('Dispatch');
-  }, [
-    clearTimers,
-    crashMeta,
-    dispatch,
-    emergencyPlan,
-    location,
-    mode,
-    navigation,
-    preferences.guardianMode,
-    preferences.notifyNearbyResponders,
-    preferences.shareMedicalCard,
-    sensors,
-    userProfile,
-  ]);
+  }, [clearTimers, dispatch, navigation]);
 
   useEffect(() => {
     if (!crashDetected) {
@@ -221,15 +103,21 @@ export default function CrashAlertModal() {
     }
 
     isHandlingRef.current = false;
-    setCountdown(10);
-    NotificationService.hapticAlert();
-    NotificationService.playSoftAlertTone({volume: 0.16});
+    setCountdown(CRASH_SCORING.countdownSeconds);
+    NotificationService.hapticAlert().catch(error => {
+      console.log('Crash alert haptic failed', error);
+    });
+    NotificationService.playSoftAlertTone({volume: 0.16}).catch(error => {
+      console.log('Crash alert tone failed', error);
+    });
     NotificationService.triggerCrashAlarm({
       silentDispatch: preferences.silentDispatch,
+    }).catch(error => {
+      console.log('Crash alarm failed', error);
     });
     if (preferences.voicePrompts) {
       NotificationService.announcePrompt(
-        'Possible crash detected. Sending emergency alert in ten seconds.',
+        'Possible accident detected. Are you safe? Emergency alert starts in ten seconds.',
       );
     }
 
@@ -289,7 +177,7 @@ export default function CrashAlertModal() {
           if (preferences.voicePrompts) {
             NotificationService.announcePrompt('Sending emergency alert now.');
           }
-          handleSOS();
+          triggerEmergencyAlert();
           return 0;
         }
 
@@ -313,7 +201,7 @@ export default function CrashAlertModal() {
     clearTimers,
     crashDetected,
     flash,
-    handleSOS,
+    triggerEmergencyAlert,
     preferences.silentDispatch,
     preferences.voicePrompts,
     ripplePulse,
@@ -342,7 +230,7 @@ export default function CrashAlertModal() {
       animationType="fade"
       transparent
       visible={crashDetected}
-      onRequestClose={handleCancel}>
+      onRequestClose={handleSafeConfirmation}>
       <View style={styles.container}>
         <AnimatedReanimated.View
           pointerEvents="none"
@@ -363,7 +251,7 @@ export default function CrashAlertModal() {
                   />
                   <Text style={styles.alertPillText}>Crash Detection</Text>
                 </View>
-                <Text style={styles.alertHint}>Auto-SOS in progress</Text>
+                <Text style={styles.alertHint}>SOS countdown active</Text>
               </View>
 
               <View style={styles.rippleContainer}>
@@ -388,10 +276,12 @@ export default function CrashAlertModal() {
                 </AnimatedReanimated.View>
               </View>
 
-              <Text style={styles.title}>Possible crash detected</Text>
+              <Text style={styles.title}>
+                Possible accident detected. Are you safe?
+              </Text>
               <Text style={styles.copy}>
-                If you are safe, cancel now. If there is no response, ResQ AI
-                will send your location, medical card, and emergency contacts.
+                Tap "I'm Safe" to cancel. If there is no response after ten
+                seconds, ResQ AI will trigger your emergency alert.
               </Text>
 
               <View style={styles.timerCard}>
@@ -411,17 +301,17 @@ export default function CrashAlertModal() {
               <RipplePressable
                 contentStyle={styles.buttonPressContent}
                 haptic="medium"
-                onPress={handleCancel}
+                onPress={handleSafeConfirmation}
                 rippleColor="rgba(13,13,13,0.2)"
                 style={styles.cancelButton}>
                 <Ionicons color={COLORS.BG} name="close-circle" size={22} />
-                <Text style={styles.cancelButtonText}>Cancel Alert</Text>
+                <Text style={styles.cancelButtonText}>I'm Safe</Text>
               </RipplePressable>
 
               <RipplePressable
                 contentStyle={styles.buttonPressContent}
                 haptic="heavy"
-                onPress={handleSOS}
+                onPress={triggerEmergencyAlert}
                 rippleColor="rgba(255, 59, 48, 0.28)"
                 style={styles.sosButton}>
                 <Ionicons

@@ -1,8 +1,14 @@
 /* eslint-disable no-alert, react-native/no-inline-styles */
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import Map, {Marker} from 'react-map-gl';
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {io} from 'socket.io-client';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import {
   fetchActiveIncidents,
   fetchHeatmapPoints,
@@ -36,7 +42,7 @@ const MAP_STYLE_OPTIONS = [
   },
 ];
 
-const MAP_VIEW_STYLE = {height: 420, width: '100%'};
+const IncidentMap = lazy(() => import('./IncidentMap'));
 
 function formatDate(value) {
   try {
@@ -499,34 +505,22 @@ function DashboardPage() {
           </div>
 
           {mapboxToken ? (
-            <Map
-              key={`${selectedIncident?.id || 'default'}-${mapStyle}`}
-              initialViewState={{
-                latitude: selectedPoint.lat,
-                longitude: selectedPoint.lng,
-                zoom: selectedIncident ? 12 : 4.6,
-              }}
-              mapStyle={mapStyle}
-              mapboxAccessToken={mapboxToken}
-              style={MAP_VIEW_STYLE}>
-              {visibleIncidents.map(incident => (
-                <Marker
-                  key={incident.id}
-                  latitude={incident.location?.lat || 0}
-                  longitude={incident.location?.lng || 0}>
-                  <button
-                    className="marker"
-                    onClick={() => setSelectedIncidentId(incident.id)}
-                    style={{
-                      '--marker-color':
-                        SEVERITY_COLORS[incident.severity?.label || 'Low'] ||
-                        '#ffd166',
-                    }}
-                    type="button"
-                  />
-                </Marker>
-              ))}
-            </Map>
+            <Suspense
+              fallback={
+                <div className="map-fallback">
+                  <h3>Loading live map...</h3>
+                </div>
+              }>
+              <IncidentMap
+                mapStyle={mapStyle}
+                mapboxToken={mapboxToken}
+                selectedIncident={selectedIncident}
+                selectedPoint={selectedPoint}
+                setSelectedIncidentId={setSelectedIncidentId}
+                severityColors={SEVERITY_COLORS}
+                visibleIncidents={visibleIncidents}
+              />
+            </Suspense>
           ) : (
             <div className="map-fallback">
               <h3>Mapbox token missing</h3>

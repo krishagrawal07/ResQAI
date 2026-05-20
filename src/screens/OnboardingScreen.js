@@ -20,12 +20,12 @@ const PAGES = [
   {
     icon: 'pulse-outline',
     title: 'Protection that stays alive',
-    body: 'Live telemetry when the device is ready, and smart preview data when you are testing on a simulator or missing permissions.',
+    body: 'Live Expo accelerometer, gyroscope, GPS, shake detection, and background location on a physical phone.',
   },
   {
     icon: 'shield-checkmark-outline',
     title: 'Real rescue flow',
-    body: 'A crash drill now fans out to a rescue desk, map, dispatch timeline, and emergency contact cascade instead of stopping at one mock screen.',
+    body: 'A real SOS opens SMS with your current Maps link, starts live tracking, and shows the dispatch timeline.',
   },
   {
     icon: 'options-outline',

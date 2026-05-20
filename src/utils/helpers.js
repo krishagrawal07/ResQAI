@@ -28,8 +28,10 @@ export function formatSensorSource(source) {
   switch (source) {
     case 'live':
       return 'Live feed';
-    case 'preview':
-      return 'Smart preview';
+    case 'drill':
+      return 'Crash drill';
+    case 'arming':
+      return 'Arming sensors';
     default:
       return 'Idle';
   }

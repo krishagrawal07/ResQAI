@@ -1,29 +1,43 @@
-import axios from 'axios';
-import {TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER} from '@env';
+import * as SMS from 'expo-sms';
 import {LOCAL_POLICE_SMS_NUMBER} from '../utils/constants';
 
-class SMSService {
-  async sendSingleSMS(to, body) {
-    const params = new URLSearchParams();
-    params.append('To', to);
-    params.append('From', TWILIO_PHONE_NUMBER);
-    params.append('Body', body);
+function hasUsableCoordinates(location) {
+  const lat = Number(location?.lat);
+  const lng = Number(location?.lng);
 
-    return axios.post(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
-      params.toString(),
-      {
-        auth: {
-          username: TWILIO_ACCOUNT_SID,
-          password: TWILIO_AUTH_TOKEN,
-        },
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      },
-    );
+  return (
+    Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0)
+  );
+}
+
+function normalizePhone(phone) {
+  const normalized = String(phone || '').trim();
+
+  if (!normalized || normalized === LOCAL_POLICE_SMS_NUMBER) {
+    return null;
   }
 
+  return normalized;
+}
+
+function uniquePhones(phones) {
+  return [...new Set(phones.map(normalizePhone).filter(Boolean))];
+}
+
+function buildEmergencyMessage(userProfile, location) {
+  const lat = location?.lat ?? 0;
+  const lng = location?.lng ?? 0;
+  const name = userProfile?.name ? `\nPerson: ${userProfile.name}` : '';
+  const locationLine = hasUsableCoordinates(location)
+    ? `Location: https://maps.google.com/?q=${lat},${lng}`
+    : 'Location: GPS unavailable. Ask user to share live location manually.';
+
+  return ['Emergency! Possible accident detected.', locationLine, name.trim()]
+    .filter(Boolean)
+    .join('\n');
+}
+
+class SMSService {
   async sendEmergencySMS(
     userProfile,
     location,
@@ -32,43 +46,53 @@ class SMSService {
   ) {
     const includeGuardianMode = options.includeGuardianMode !== false;
     const includeNearbyResponders = options.includeNearbyResponders !== false;
-    const message = [
-      'EMERGENCY ALERT - ResQ AI',
-      `${userProfile.name} may have been in a crash.`,
-      '',
-      `Location: ${location.address}`,
-      `Maps: https://maps.google.com/?q=${location.lat},${location.lng}`,
-      `Nearest Police: ${
-        includeNearbyResponders
-          ? nearbyPolice[0]?.name ?? 'Dispatching nearest unit'
-          : 'Nearby responder ping disabled'
-      }`,
-      'Please respond immediately.',
-    ].join('\n');
+    const guardianPhone = includeGuardianMode
+      ? userProfile?.emergencyContact?.phone
+      : null;
+    const responderPhone = includeNearbyResponders
+      ? nearbyPolice.find(item => normalizePhone(item?.phone))?.phone
+      : null;
+    const recipients = uniquePhones([guardianPhone, responderPhone]);
+    const body = buildEmergencyMessage(userProfile, location);
 
-    const recipients = [
-      includeGuardianMode ? userProfile?.emergencyContact?.phone : null,
-      includeNearbyResponders ? LOCAL_POLICE_SMS_NUMBER : null,
-    ].filter(Boolean);
-
-    if (
-      !TWILIO_ACCOUNT_SID ||
-      !TWILIO_AUTH_TOKEN ||
-      !TWILIO_PHONE_NUMBER ||
-      TWILIO_ACCOUNT_SID === 'your_sid_here'
-    ) {
-      console.log('Twilio credentials are missing; SMS skipped.');
-      return recipients.map(phone => ({phone, status: 'skipped'}));
+    if (!recipients.length) {
+      return [
+        {
+          body,
+          phone: null,
+          status: 'skipped',
+          reason: 'No SMS recipients configured',
+        },
+      ];
     }
 
-    const results = await Promise.allSettled(
-      recipients.map(phone => this.sendSingleSMS(phone, message)),
-    );
+    const isAvailable = await SMS.isAvailableAsync().catch(() => false);
 
-    return results.map((result, index) => ({
-      phone: recipients[index],
-      status: result.status,
-    }));
+    if (!isAvailable) {
+      return recipients.map(phone => ({
+        body,
+        phone,
+        status: 'simulated',
+        reason: 'SMS composer unavailable on this device',
+      }));
+    }
+
+    try {
+      const result = await SMS.sendSMSAsync(recipients, body);
+      return recipients.map(phone => ({
+        body,
+        phone,
+        status: result?.result ?? 'unknown',
+      }));
+    } catch (error) {
+      console.log('Expo SMS send failed', error);
+      return recipients.map(phone => ({
+        body,
+        phone,
+        status: 'simulated',
+        reason: error?.message || 'SMS failed, simulated local delivery',
+      }));
+    }
   }
 }
 

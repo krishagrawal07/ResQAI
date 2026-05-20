@@ -19,6 +19,7 @@ import RevealView from '../components/RevealView';
 import {useAppContext} from '../context/AppContext';
 import FirebaseService from '../services/FirebaseService';
 import {COLORS, FONTS, STORAGE_KEYS} from '../utils/constants';
+import {requestPhoneCallPermission} from '../utils/permissions';
 
 const QUICK_LINES = [
   {label: 'National Emergency', number: '112'},
@@ -89,6 +90,11 @@ export default function ContactsScreen() {
   const handleQuickDial = async number => {
     const url = `tel:${number}`;
     try {
+      const phoneCall = await requestPhoneCallPermission();
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {permissions: {phoneCall}},
+      });
       const canOpen = await Linking.canOpenURL(url);
       if (!canOpen) {
         Alert.alert('Dial unavailable', `Calling ${number} is not supported.`);

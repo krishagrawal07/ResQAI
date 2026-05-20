@@ -11,10 +11,18 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
-jest.mock('@react-navigation/native', () => ({
-  DarkTheme: {colors: {}},
-  NavigationContainer: ({children}) => children,
-}));
+jest.mock('@react-navigation/native', () => {
+  const mockReact = require('react');
+
+  return {
+    createNavigationContainerRef: () => ({
+      isReady: jest.fn(() => false),
+      navigate: jest.fn(),
+    }),
+    DarkTheme: {colors: {}},
+    NavigationContainer: mockReact.forwardRef(({children}, _ref) => children),
+  };
+});
 
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({children}) => children,
@@ -29,8 +37,17 @@ jest.mock('../src/navigation/AppNavigator', () => ({
   default: () => null,
 }));
 
+jest.mock('../src/components/CrashAlertModal', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 jest.mock('../src/services/FirebaseService', () => ({
   initialize: jest.fn(async () => null),
+}));
+
+jest.mock('../src/services/EmergencyService', () => ({
+  triggerSOS: jest.fn(async () => ({status: 'sent'})),
 }));
 
 jest.mock('../src/services/NotificationService', () => ({
@@ -39,7 +56,9 @@ jest.mock('../src/services/NotificationService', () => ({
 }));
 
 jest.mock('../src/services/SensorService', () => ({
-  stopMonitoring: jest.fn(),
+  handleAppStateChange: jest.fn(),
+  startMonitoring: jest.fn(async () => null),
+  stopMonitoring: jest.fn(async () => null),
 }));
 
 jest.mock('../src/services/LiveTrackingService', () => ({

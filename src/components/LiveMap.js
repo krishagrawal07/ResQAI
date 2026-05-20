@@ -129,7 +129,9 @@ export default function LiveMap({
 
     const syncFallbackGps = async () => {
       try {
-        const nextLocation = await LocationService.getCurrentLocation();
+        const nextLocation = await LocationService.getCurrentLocation({
+          skipReverseGeocode: true,
+        });
         if (isMounted) {
           onUserLocationChange({
             ...nextLocation,
@@ -142,7 +144,7 @@ export default function LiveMap({
     };
 
     syncFallbackGps();
-    const intervalId = setInterval(syncFallbackGps, 6000);
+    const intervalId = setInterval(syncFallbackGps, 4000);
 
     return () => {
       isMounted = false;

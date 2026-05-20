@@ -81,3 +81,10 @@ logs/demo-stack/
 logs/
 logs/
 backend/data/
+
+# Expo
+.expo
+dist/
+!dashboard/dist/
+!dashboard/dist/**
+web-build/

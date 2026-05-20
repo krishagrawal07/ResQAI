@@ -1,30 +1,17 @@
-import {CRASH_THRESHOLDS} from '../utils/constants';
+import {CRASH_SCORING, CRASH_THRESHOLDS} from '../utils/constants';
 import {calculateMagnitude} from '../utils/helpers';
+
+const COOLDOWN_MS = 30000;
 
 const SENSITIVITY_PROFILES = {
   calm: {
-    accelG: 1.14,
-    audioDb: 1.08,
-    gyroMagnitude: 1.08,
-    minSpeedBeforeKmh: 1.1,
-    orientationTiltDeg: 1.08,
-    speedDropPercent: 1.08,
+    gyroMagnitude: 1.12,
   },
   balanced: {
-    accelG: 1,
-    audioDb: 1,
     gyroMagnitude: 1,
-    minSpeedBeforeKmh: 1,
-    orientationTiltDeg: 1,
-    speedDropPercent: 1,
   },
   max: {
-    accelG: 0.86,
-    audioDb: 0.9,
-    gyroMagnitude: 0.9,
-    minSpeedBeforeKmh: 0.9,
-    orientationTiltDeg: 0.9,
-    speedDropPercent: 0.9,
+    gyroMagnitude: 0.88,
   },
 };
 
@@ -38,6 +25,8 @@ class CrashDetectionService {
   crashCallback = null;
 
   cooldown = false;
+
+  cooldownTimeoutId = null;
 
   setMode(mode) {
     this.mode = mode;
@@ -54,6 +43,11 @@ class CrashDetectionService {
   reset() {
     this.lastSpeed = 0;
     this.cooldown = false;
+
+    if (this.cooldownTimeoutId) {
+      clearTimeout(this.cooldownTimeoutId);
+      this.cooldownTimeoutId = null;
+    }
   }
 
   getThresholds() {
@@ -63,16 +57,12 @@ class CrashDetectionService {
       SENSITIVITY_PROFILES[this.sensitivity] ?? SENSITIVITY_PROFILES.balanced;
 
     return {
-      ...baseThresholds,
-      accelG: baseThresholds.accelG * profile.accelG,
-      audioDb: baseThresholds.audioDb * profile.audioDb,
+      accelerationThresholdMs2: CRASH_SCORING.accelerationThresholdMs2,
+      fullEmergencyScore: CRASH_SCORING.fullEmergencyScore,
       gyroMagnitude: baseThresholds.gyroMagnitude * profile.gyroMagnitude,
-      minSpeedBeforeKmh:
-        baseThresholds.minSpeedBeforeKmh * profile.minSpeedBeforeKmh,
-      orientationTiltDeg:
-        baseThresholds.orientationTiltDeg * profile.orientationTiltDeg,
-      speedDropPercent:
-        baseThresholds.speedDropPercent * profile.speedDropPercent,
+      maxScore: CRASH_SCORING.maxScore,
+      sosCountdownScore: CRASH_SCORING.sosCountdownScore,
+      suddenSpeedDropThresholdKmh: CRASH_SCORING.suddenSpeedDropThresholdKmh,
     };
   }
 
@@ -86,109 +76,139 @@ class CrashDetectionService {
     return (Math.acos(normalized) * 180) / Math.PI;
   }
 
-  evaluateSeverity(snapshot, thresholds) {
-    const {accelG, speedDropPercent, orientationTiltDeg, gyroMag, audioDb} =
-      snapshot;
-
-    const accelScore = Math.min((accelG / thresholds.accelG) * 36, 36);
-    const speedScore = Math.min(
-      (speedDropPercent / thresholds.speedDropPercent) * 28,
-      28,
-    );
-    const orientationScore = Math.min(
-      (orientationTiltDeg / thresholds.orientationTiltDeg) * 22,
-      22,
-    );
-    const gyroScore = Math.min((gyroMag / thresholds.gyroMagnitude) * 10, 10);
-    const audioScore = Math.min((audioDb / 120) * 4, 4);
-
-    const score = Math.round(
-      Math.max(
-        0,
-        Math.min(
-          accelScore + speedScore + orientationScore + gyroScore + audioScore,
-          100,
-        ),
-      ),
-    );
-
-    let label = 'Low';
-    if (score >= 80) {
-      label = 'Critical';
-    } else if (score >= 55) {
-      label = 'Medium';
-    }
-
-    const reasons = [];
-    if (accelG >= thresholds.accelG) {
-      reasons.push('High impact force');
-    }
-    if (speedDropPercent >= thresholds.speedDropPercent) {
-      reasons.push('Sudden speed drop');
-    }
-    if (orientationTiltDeg >= thresholds.orientationTiltDeg) {
-      reasons.push('Abnormal tilt/orientation');
-    }
-    if (gyroMag >= thresholds.gyroMagnitude) {
-      reasons.push('Rapid rotation');
-    }
-    if (audioDb >= thresholds.audioDb) {
-      reasons.push('Impact audio spike');
-    }
-
-    return {
-      label,
-      score,
-      reasons,
-    };
-  }
-
-  buildSnapshot(sensorData, thresholds, options = {}) {
-    const {ax, ay, az, gx, gy, gz, speed, db} = sensorData;
+  buildSnapshot(sensorData = {}, thresholds, options = {}) {
+    const {ax, ay, az, gx, gy, gz, speed} = sensorData;
     const accelMag = calculateMagnitude(ax, ay, az);
-    const accelG = accelMag / 9.81;
     const gyroMag = calculateMagnitude(gx, gy, gz);
+    const sampleAt = Number(
+      options.timestamp ?? sensorData.timestamp ?? Date.now(),
+    );
+    const providedSpeedBefore = Number(
+      options.speedBeforeKmh ?? sensorData.speedBeforeKmh,
+    );
     const speedBeforeKmh =
-      Number(options.speedBeforeKmh) > 0
-        ? Number(options.speedBeforeKmh)
+      Number.isFinite(providedSpeedBefore) && providedSpeedBefore >= 0
+        ? providedSpeedBefore
         : this.lastSpeed;
-    const speedAfterKmh = speed;
+    const speedAfterKmh = Number(speed) || 0;
+    const providedSpeedDropKmh = Number(
+      options.speedDropKmh ?? sensorData.speedDropKmh,
+    );
+    const derivedSpeedDropKmh = Math.max(0, speedBeforeKmh - speedAfterKmh);
+    const speedDropKmh =
+      Number.isFinite(providedSpeedDropKmh) && providedSpeedDropKmh >= 0
+        ? providedSpeedDropKmh
+        : derivedSpeedDropKmh;
     const speedDropPercent =
-      speedBeforeKmh > 0
-        ? ((speedBeforeKmh - speedAfterKmh) / speedBeforeKmh) * 100
-        : 0;
+      speedBeforeKmh > 0 ? (speedDropKmh / speedBeforeKmh) * 100 : 0;
     const orientationTiltDeg = this.calculateTiltDeg(ax, ay, az);
-    const audioDb = db;
-
-    const signals = {
-      abnormalOrientation: orientationTiltDeg >= thresholds.orientationTiltDeg,
-      highImpact: accelG >= thresholds.accelG,
-      suddenStop:
-        speedBeforeKmh >= thresholds.minSpeedBeforeKmh &&
-        speedDropPercent >= thresholds.speedDropPercent,
-      rapidRotation: gyroMag >= thresholds.gyroMagnitude,
-    };
+    const highImpact = accelMag > thresholds.accelerationThresholdMs2;
+    const suddenSpeedDrop =
+      speedDropKmh > thresholds.suddenSpeedDropThresholdKmh;
+    const abnormalRotation = gyroMag >= thresholds.gyroMagnitude;
 
     return {
-      accelG: Number(accelG.toFixed(2)),
+      accelG: Number((accelMag / 9.81).toFixed(2)),
       accelMag: Number(accelMag.toFixed(2)),
-      audioDb: Number(audioDb.toFixed(2)),
       gyroMag: Number(gyroMag.toFixed(2)),
       orientationTiltDeg: Number(orientationTiltDeg.toFixed(2)),
       speedAfterKmh: Number(speedAfterKmh.toFixed(2)),
       speedBeforeKmh: Number(speedBeforeKmh.toFixed(2)),
+      speedDropKmh: Number(speedDropKmh.toFixed(2)),
       speedDropPercent: Number(speedDropPercent.toFixed(2)),
-      signals,
+      signals: {
+        abnormalRotation,
+        highImpact,
+        orientationChange: abnormalRotation,
+        rapidRotation: abnormalRotation,
+        suddenSpeedDrop,
+        suddenStop: suddenSpeedDrop,
+      },
+      timestamp:
+        Number.isFinite(sampleAt) && sampleAt > 0 ? sampleAt : Date.now(),
+    };
+  }
+
+  evaluateSeverity(snapshot, thresholds) {
+    const reasons = [];
+    let score = 0;
+
+    if (snapshot.signals.highImpact) {
+      score += CRASH_SCORING.highImpactPoints;
+      reasons.push('Acceleration exceeded 25 m/s^2');
+    }
+
+    if (snapshot.signals.suddenSpeedDrop) {
+      score += CRASH_SCORING.suddenSpeedDropPoints;
+      reasons.push('Speed dropped by more than 20 km/h');
+    }
+
+    if (snapshot.signals.abnormalRotation) {
+      score += CRASH_SCORING.abnormalRotationPoints;
+      reasons.push('Gyroscope detected abnormal rotation');
+    }
+
+    let label = 'Low';
+    let action = 'ignore';
+
+    if (score >= thresholds.fullEmergencyScore) {
+      label = 'Critical';
+      action = 'full-emergency';
+    } else if (score >= thresholds.sosCountdownScore) {
+      label = 'Medium';
+      action = 'sos-countdown';
+    }
+
+    return {
+      action,
+      label,
+      reasons,
+      score,
     };
   }
 
   previewSeverity(sensorData, options = {}) {
     const thresholds = this.getThresholds();
     const snapshot = this.buildSnapshot(sensorData, thresholds, options);
+
     return {
       snapshot,
       severity: this.evaluateSeverity(snapshot, thresholds),
     };
+  }
+
+  startCooldown() {
+    this.cooldown = true;
+
+    if (this.cooldownTimeoutId) {
+      clearTimeout(this.cooldownTimeoutId);
+    }
+
+    this.cooldownTimeoutId = setTimeout(() => {
+      this.cooldown = false;
+      this.cooldownTimeoutId = null;
+    }, COOLDOWN_MS);
+  }
+
+  buildPayload(snapshot, severity) {
+    return {
+      action: severity.action,
+      detectedAt: new Date().toISOString(),
+      severity,
+      snapshot,
+    };
+  }
+
+  triggerFullEmergency(payload) {
+    this.startCooldown();
+    this.crashCallback?.(payload);
+    return payload;
+  }
+
+  triggerSOSCountdown(payload) {
+    this.startCooldown();
+    this.crashCallback?.(payload);
+    return payload;
   }
 
   check(sensorData) {
@@ -197,32 +217,28 @@ class CrashDetectionService {
     }
 
     const thresholds = this.getThresholds();
-    const snapshot = this.buildSnapshot(sensorData, thresholds);
-    this.lastSpeed = sensorData.speed;
-    const severity = this.evaluateSeverity(snapshot, thresholds);
+    const snapshot = this.buildSnapshot(sensorData, thresholds, {
+      timestamp: Date.now(),
+    });
+    const providedSpeed = Number(sensorData?.speed);
 
-    const shouldTrigger =
-      snapshot.signals.highImpact &&
-      snapshot.signals.suddenStop &&
-      snapshot.signals.abnormalOrientation;
-
-    if (shouldTrigger) {
-      this.cooldown = true;
-      setTimeout(() => {
-        this.cooldown = false;
-      }, 30000);
-
-      const payload = {
-        detectedAt: new Date().toISOString(),
-        severity,
-        snapshot,
-      };
-
-      this.crashCallback?.(payload);
-      return payload;
+    if (Number.isFinite(providedSpeed) && providedSpeed >= 0) {
+      this.lastSpeed = providedSpeed;
     }
 
-    return null;
+    const severity = this.evaluateSeverity(snapshot, thresholds);
+
+    if (severity.action === 'ignore') {
+      return null;
+    }
+
+    const payload = this.buildPayload(snapshot, severity);
+
+    if (severity.action === 'full-emergency') {
+      return this.triggerFullEmergency(payload);
+    }
+
+    return this.triggerSOSCountdown(payload);
   }
 }
 

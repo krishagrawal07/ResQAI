@@ -12,7 +12,6 @@ import AnimatedReanimated, {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AuroraBackground from '../components/AuroraBackground';
 import BrandMark from '../components/BrandMark';
-import CrashAlertModal from '../components/CrashAlertModal';
 import {
   PulsingSafetyIndicator,
   ReanimatedStatusDot,
@@ -23,11 +22,13 @@ import RevealView from '../components/RevealView';
 import SensorCard from '../components/SensorCard';
 import {useAppContext} from '../context/AppContext';
 import CrashDetectionService from '../services/CrashDetectionService';
+import EmergencyService from '../services/EmergencyService';
 import LocationService from '../services/LocationService';
 import NotificationService from '../services/NotificationService';
 import SensorService from '../services/SensorService';
 import {
   COLORS,
+  CRASH_SCORING,
   CRASH_THRESHOLDS,
   FONTS,
   MODE_META,
@@ -38,7 +39,11 @@ import {
   formatModeShortLabel,
   toPercentage,
 } from '../utils/helpers';
-import {requestAllPermissions} from '../utils/permissions';
+import {
+  hasFullMonitoringPermissions,
+  requestAllPermissions,
+  requestSmsPermission,
+} from '../utils/permissions';
 
 const QUICK_ACTIONS = [
   {
@@ -71,16 +76,75 @@ export default function MonitorScreen({navigation}) {
   const {state, dispatch} = useAppContext();
   const pulse = useSharedValue(0);
   const autoArmHandledRef = useRef(false);
+  const manualSosRef = useRef(false);
+  const latestStateRef = useRef(state);
 
-  const handleCrashDetected = useCallback(
-    detectionPayload => {
-      dispatch({type: 'CRASH_DETECTED', payload: detectionPayload});
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
+
+  const handleManualSOS = useCallback(
+    async (source = 'manual-button') => {
+      const latestState = latestStateRef.current;
+
+      if (manualSosRef.current || latestState.sosTriggered) {
+        return;
+      }
+
+      manualSosRef.current = true;
+      const sms = await requestSmsPermission();
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {permissions: {sms}},
+      });
+      const severityPreview = CrashDetectionService.previewSeverity(
+        latestState.sensors,
+        {
+          speedBeforeKmh: Math.max(
+            latestState.sensors.speedBeforeKmh ||
+              latestState.sensors.speed + 30,
+            45,
+          ),
+        },
+      );
+
+      try {
+        await NotificationService.hapticAlert();
+        await NotificationService.playSoftAlertTone({volume: 0.32});
+        await EmergencyService.triggerSOS({
+          crashMetaOverride: {
+            detectedAt: new Date().toISOString(),
+            severity: {
+              ...severityPreview.severity,
+              label: source === 'shake-sos' ? 'Shake SOS' : 'Manual SOS',
+            },
+            snapshot: severityPreview.snapshot,
+          },
+          dispatch,
+          source,
+          state: latestState,
+        });
+        navigation.navigate('Dispatch');
+      } catch (error) {
+        console.log('Manual SOS failed', error);
+        dispatch({
+          type: 'SET_RUNTIME_STATUS',
+          payload: {
+            lastSosError: error?.message || 'Manual SOS could not be sent',
+            startupMode: 'local-sos',
+          },
+        });
+      } finally {
+        manualSosRef.current = false;
+      }
     },
-    [dispatch],
+    [dispatch, navigation],
   );
 
   const triggerSimulatedCrash = useCallback(() => {
-    NotificationService.playSoftAlertTone({volume: 0.22});
+    NotificationService.playSoftAlertTone({volume: 0.22}).catch(error => {
+      console.log('Crash drill tone failed', error);
+    });
     const simulated = SensorService.simulateCrash(state.mode);
     const severityPreview = CrashDetectionService.previewSeverity(simulated, {
       speedBeforeKmh: Math.max(48, state.sensors.speed || 0),
@@ -90,19 +154,16 @@ export default function MonitorScreen({navigation}) {
     dispatch({
       type: 'CRASH_DETECTED',
       payload: {
+        action: 'sos-countdown',
         detectedAt: new Date().toISOString(),
-        severity: severityPreview.severity,
+        severity: {
+          ...severityPreview.severity,
+          action: 'sos-countdown',
+        },
         snapshot: severityPreview.snapshot,
       },
     });
   }, [dispatch, state.mode, state.sensors.speed]);
-
-  const handleSensorUpdate = useCallback(
-    nextSensors => {
-      dispatch({type: 'UPDATE_SENSORS', payload: nextSensors});
-    },
-    [dispatch],
-  );
 
   const handleLocationUpdate = useCallback(
     nextLocation => {
@@ -111,41 +172,9 @@ export default function MonitorScreen({navigation}) {
     [dispatch],
   );
 
-  const handleStatusChange = useCallback(
-    nextStatus => {
-      dispatch({type: 'SET_RUNTIME_STATUS', payload: nextStatus});
-    },
-    [dispatch],
-  );
-
   useEffect(() => {
     pulse.value = withRepeat(withTiming(1, {duration: 1600}), -1, true);
   }, [pulse]);
-
-  useEffect(() => {
-    CrashDetectionService.setMode(state.mode);
-    CrashDetectionService.setSensitivity(
-      state.preferences.detectionSensitivity,
-    );
-
-    if (state.isMonitoring) {
-      SensorService.startMonitoring({
-        mode: state.mode,
-        onSensorUpdate: handleSensorUpdate,
-        onLocationUpdate: handleLocationUpdate,
-        onCrash: handleCrashDetected,
-        onStatusChange: handleStatusChange,
-      });
-    }
-  }, [
-    handleCrashDetected,
-    handleLocationUpdate,
-    handleSensorUpdate,
-    handleStatusChange,
-    state.isMonitoring,
-    state.mode,
-    state.preferences.detectionSensitivity,
-  ]);
 
   const simulateButtonStyle = useAnimatedStyle(() => ({
     transform: [{scale: interpolate(pulse.value, [0, 1], [1, 1.03])}],
@@ -163,21 +192,24 @@ export default function MonitorScreen({navigation}) {
 
   const startMonitoring = useCallback(async () => {
     const permissions = await requestAllPermissions();
-    const liveReady =
-      permissions.location && permissions.microphone && permissions.activity;
+    const liveReady = hasFullMonitoringPermissions(permissions);
 
     dispatch({
       type: 'SET_RUNTIME_STATUS',
       payload: {
         permissions,
-        startupMode: liveReady ? 'live' : 'preview',
+        startupMode: liveReady ? 'live' : 'permissions-needed',
       },
     });
+
+    if (!liveReady) {
+      return;
+    }
+
     dispatch({type: 'SET_MONITORING', payload: true});
   }, [dispatch]);
 
   const stopMonitoring = useCallback(async () => {
-    await SensorService.stopMonitoring();
     dispatch({type: 'SET_MONITORING', payload: false});
     dispatch({
       type: 'SET_RUNTIME_STATUS',
@@ -186,15 +218,27 @@ export default function MonitorScreen({navigation}) {
   }, [dispatch]);
 
   const handleMonitoringToggle = useCallback(async () => {
-    NotificationService.playSoftAlertTone({volume: 0.12});
+    try {
+      await NotificationService.playSoftAlertTone({volume: 0.12});
 
-    if (state.isMonitoring) {
-      await stopMonitoring();
-      return;
+      if (state.isMonitoring) {
+        await stopMonitoring();
+        return;
+      }
+
+      await startMonitoring();
+    } catch (error) {
+      console.log('Monitoring toggle failed', error);
+      dispatch({
+        type: 'SET_RUNTIME_STATUS',
+        payload: {
+          lastMonitoringError:
+            error?.message || 'Live monitoring could not be toggled',
+          startupMode: 'permissions-needed',
+        },
+      });
     }
-
-    await startMonitoring();
-  }, [startMonitoring, state.isMonitoring, stopMonitoring]);
+  }, [dispatch, startMonitoring, state.isMonitoring, stopMonitoring]);
 
   useEffect(() => {
     if (!state.preferences.autoArm) {
@@ -239,7 +283,7 @@ export default function MonitorScreen({navigation}) {
     } catch (error) {
       dispatch({
         type: 'SET_RUNTIME_STATUS',
-        payload: {startupMode: 'preview'},
+        payload: {startupMode: 'permissions-needed'},
       });
     }
   };
@@ -247,10 +291,7 @@ export default function MonitorScreen({navigation}) {
   const threshold = CRASH_THRESHOLDS[state.mode] ?? CRASH_THRESHOLDS.biker;
   const modeOptions = Object.values(MODE_META);
   const activeMode = MODE_META[state.mode] ?? MODE_META.biker;
-  const liveReady =
-    state.runtime.permissions.location &&
-    state.runtime.permissions.microphone &&
-    state.runtime.permissions.activity;
+  const liveReady = hasFullMonitoringPermissions(state.runtime.permissions);
 
   const readinessItems = [
     {
@@ -277,6 +318,12 @@ export default function MonitorScreen({navigation}) {
       label: 'Voice prompts',
       active: state.preferences.voicePrompts,
     },
+    {
+      key: 'shakeToSOS',
+      icon: 'phone-portrait-outline',
+      label: 'Shake SOS',
+      active: state.preferences.shakeToSOS,
+    },
   ];
   const readinessIconStyles = {
     active: styles.readinessIconActive,
@@ -285,8 +332,10 @@ export default function MonitorScreen({navigation}) {
   const sensorFeedValue =
     state.runtime.sensorSource === 'live'
       ? 'Live'
-      : state.runtime.sensorSource === 'preview'
-      ? 'Preview'
+      : state.runtime.sensorSource === 'drill'
+      ? 'Drill'
+      : state.runtime.sensorSource === 'arming'
+      ? 'Arming'
       : 'Idle';
   const rescueLaneValue = state.preferences.guardianMode ? 'Guardian' : 'Solo';
   const heroSignals = [
@@ -363,13 +412,37 @@ export default function MonitorScreen({navigation}) {
         percentage: toPercentage(state.sensors.speed, 120),
       },
       {
-        label: 'Cabin audio',
-        value: state.sensors.db,
-        unit: 'dB',
+        label: 'Speed drop',
+        value: state.sensors.speedDropKmh,
+        unit: 'km/h',
         color: COLORS.YELLOW,
-        icon: 'mic-outline',
-        hint: 'Impact noise level',
-        percentage: toPercentage(state.sensors.db, threshold.audioDb + 10),
+        icon: 'trending-down-outline',
+        hint: 'Sudden stop signal',
+        percentage: toPercentage(
+          state.sensors.speedDropKmh,
+          CRASH_SCORING.suddenSpeedDropThresholdKmh,
+        ),
+      },
+      {
+        label: 'Impact G',
+        value: state.sensors.accelG,
+        unit: 'g',
+        color: COLORS.RED,
+        icon: 'warning-outline',
+        hint: 'Resultant force',
+        percentage: toPercentage(state.sensors.accelG, threshold.accelG),
+      },
+      {
+        label: 'AI score',
+        value: state.sensors.crashScore,
+        unit: '/50',
+        color: COLORS.CYAN,
+        icon: 'analytics-outline',
+        hint: 'Impact + stop + rotation',
+        percentage: toPercentage(
+          state.sensors.crashScore,
+          CRASH_SCORING.maxScore,
+        ),
       },
     ],
     [state.sensors, threshold],
@@ -487,6 +560,28 @@ export default function MonitorScreen({navigation}) {
                 </LinearGradient>
               </RipplePressable>
 
+              <RipplePressable
+                haptic="heavy"
+                onPress={() => handleManualSOS('manual-button')}
+                rippleColor="rgba(255, 59, 48, 0.28)"
+                style={styles.manualSosButton}>
+                <LinearGradient
+                  colors={[COLORS.PRIMARY, '#7A0B07']}
+                  end={{x: 1, y: 1}}
+                  start={{x: 0, y: 0}}
+                  style={styles.manualSosGradient}>
+                  <View style={styles.manualSosIcon}>
+                    <Ionicons color="#FFFFFF" name="call" size={22} />
+                  </View>
+                  <View style={styles.manualSosCopy}>
+                    <Text style={styles.manualSosLabel}>Send SOS Now</Text>
+                    <Text style={styles.manualSosHint}>
+                      Opens real SMS with your live GPS link
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </RipplePressable>
+
               <AnimatedReanimated.View
                 style={[styles.simulateButtonWrap, simulateButtonStyle]}>
                 <RipplePressable
@@ -500,9 +595,7 @@ export default function MonitorScreen({navigation}) {
                     start={{x: 0, y: 0}}
                     style={styles.simulateButton}>
                     <Ionicons color="#FFFFFF" name="flash" size={20} />
-                    <Text style={styles.simulateButtonText}>
-                      Simulate Crash
-                    </Text>
+                    <Text style={styles.simulateButtonText}>Crash Drill</Text>
                   </LinearGradient>
                 </RipplePressable>
               </AnimatedReanimated.View>
@@ -533,12 +626,12 @@ export default function MonitorScreen({navigation}) {
               <Text style={styles.noticeTitle}>
                 {liveReady
                   ? 'Live device mode ready'
-                  : 'Preview mode is enabled'}
+                  : 'Permissions needed for live mode'}
               </Text>
               <Text style={styles.noticeText}>
                 {liveReady
-                  ? 'Location, microphone, and motion access are available for live monitoring.'
-                  : 'If some permissions are missing, the app keeps working with smart preview data instead of looking broken.'}
+                  ? 'Always-on location and activity recognition are available for real crash monitoring.'
+                  : 'Grant always-on location and activity recognition on a physical phone to enable real crash detection.'}
               </Text>
             </View>
           </View>
@@ -698,8 +791,6 @@ export default function MonitorScreen({navigation}) {
           </View>
         </RevealView>
       </ScrollView>
-
-      <CrashAlertModal />
     </View>
   );
 }
@@ -840,6 +931,44 @@ const styles = StyleSheet.create({
   },
   armButtonHint: {
     color: COLORS.MUTED2,
+    fontSize: 12,
+    marginTop: 4,
+    fontFamily: FONTS.body,
+  },
+  manualSosButton: {
+    width: '100%',
+    marginBottom: 12,
+  },
+  manualSosGradient: {
+    minHeight: 64,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  manualSosIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  manualSosCopy: {
+    flex: 1,
+  },
+  manualSosLabel: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+    fontFamily: FONTS.strong,
+  },
+  manualSosHint: {
+    color: 'rgba(255,255,255,0.78)',
     fontSize: 12,
     marginTop: 4,
     fontFamily: FONTS.body,

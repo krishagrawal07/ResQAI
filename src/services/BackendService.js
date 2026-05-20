@@ -10,6 +10,22 @@ function trimTrailingSlash(value) {
   return value.replace(/\/+$/, '');
 }
 
+function parseJsonResponse(text, response) {
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    if (!response.ok) {
+      return {message: text};
+    }
+
+    throw new Error('Backend returned an invalid JSON response.');
+  }
+}
+
 class BackendService {
   constructor() {
     this.baseUrl = trimTrailingSlash(RESQ_API_BASE_URL || DEFAULT_BASE_URL);
@@ -20,17 +36,41 @@ class BackendService {
   }
 
   async request(path, options = {}) {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...(options.headers ?? {}),
-      },
-    });
+    const {timeoutMs = 10000, ...fetchOptions} = options;
+    const controller =
+      typeof AbortController !== 'undefined' && !fetchOptions.signal
+        ? new AbortController()
+        : null;
+    const timeoutId = controller
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
+
+    let response;
+
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        ...fetchOptions,
+        signal: fetchOptions.signal ?? controller?.signal,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          ...(fetchOptions.headers ?? {}),
+        },
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw new Error('Backend request timed out. Check network connection.');
+      }
+
+      throw error;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
 
     const text = await response.text();
-    const payload = text ? JSON.parse(text) : {};
+    const payload = parseJsonResponse(text, response);
 
     if (!response.ok) {
       const message =

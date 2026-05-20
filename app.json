@@ -1,6 +1,34 @@
 {
   "name": "ResQAI",
-  "displayName": "ResQ AI"
+  "displayName": "ResQ AI",
+  "expo": {
+    "name": "ResQ AI",
+    "slug": "resq-ai",
+    "scheme": "resqai",
+    "android": {
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "ACTIVITY_RECOGNITION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "CALL_PHONE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SEND_SMS",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ]
+    },
+    "ios": {
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ResQ AI needs location to send your position to emergency services.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "ResQ AI needs background location to keep rescue tracking active after an SOS.",
+        "NSLocationAlwaysUsageDescription": "ResQ AI uses background location to keep your emergency GPS link live during a rescue.",
+        "NSMotionUsageDescription": "ResQ AI needs motion sensors to detect crashes.",
+        "UIBackgroundModes": ["location", "fetch", "audio", "processing"]
+      }
+    }
+  }
 }
-
-

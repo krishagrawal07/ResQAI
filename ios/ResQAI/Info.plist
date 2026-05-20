@@ -36,6 +36,8 @@
 	<string>ResQ AI needs location to send your position to emergency services</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>ResQ AI needs location to dispatch help after a crash</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>ResQ AI uses background location to keep your emergency GPS link live during a rescue</string>
 	<key>NSMotionUsageDescription</key>
 	<string>ResQ AI needs motion sensors to detect crashes</string>
 	<key>NSMicrophoneUsageDescription</key>
@@ -44,6 +46,7 @@
 	<array>
 		<string>location</string>
 		<string>audio</string>
+		<string>fetch</string>
 		<string>processing</string>
 	</array>
 	<key>CFBundleURLTypes</key>

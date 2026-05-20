@@ -290,7 +290,7 @@ export default function DispatchScreen({navigation}) {
               <View style={styles.sentHero}>
                 <AnimatedSuccessCheckmark active={sosTriggered} />
                 <FadeInWhen active={sosTriggered} delay={240}>
-                  <Text style={styles.sentTitle}>Help is on the way</Text>
+                  <Text style={styles.sentTitle}>Alert Sent</Text>
                 </FadeInWhen>
                 <FadeInWhen active={sosTriggered} delay={380}>
                   <Text style={styles.sentCopy}>
